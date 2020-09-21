@@ -12,7 +12,7 @@ CXXFLAGSextra ?=
 CXX ?= g++
 
 # pre-defined flags
-LDFLAGS_shared := -pthread -Lhtslib -Bstatic -lhts -Bdynamic -lz -lrt
+LDFLAGS_shared := -pthread -Lhtslib -Bstatic -lhts -Bdynamic -lz
 LDFLAGS_static := -static -static-libgcc -pthread -Lhtslib -lhts -lz
 LDFLAGS_Mac :=-pthread -lz htslib/libhts.a
 LDFLAGS_Mac_static :=-pthread -lz -static-libgcc htslib/libhts.a
@@ -20,35 +20,56 @@ LDFLAGS_gdb := $(LDFLAGS_shared)
 
 COMPTIMEPLACE := -D'COMPILATION_TIME_PLACE="$(shell echo `date` $(HOSTNAME):`pwd`)"'
 
-CXXFLAGS_common := -pipe -std=c++11 -Wall -Wextra -fopenmp $(COMPTIMEPLACE)
+# Defaults, can be overridden by make arguments or environment
+CXXFLAGS ?= -pipe -Wall -Wextra
+CFLAGS ?= -pipe -Wall -Wextra -O3
+
+# Unconditionally set essential flags and optimization options
+CXXFLAGS_common := -std=c++11 -fopenmp $(COMPTIMEPLACE)
 CXXFLAGS_main := -O3 $(CXXFLAGS_common)
-CXXFLAGS_gdb :=  -O0 -g $(CXXFLAGS_common)
-
-CFLAGS := -O3 -pipe -Wall -Wextra $(CFLAGS)
-
+CXXFLAGS_gdb := -O0 -g3 $(CXXFLAGS_common)
 
 ##########################################################################################################
-
-OBJECTS = SharedMemory.o PackedArray.o SuffixArrayFuns.o STAR.o Parameters.o InOutStreams.o SequenceFuns.o Genome.o Chain.o Stats.o \
-        Transcript.o Transcript_alignScore.o \
-        ReadAlign.o ReadAlign_storeAligns.o ReadAlign_stitchPieces.o ReadAlign_multMapSelect.o ReadAlign_mapOneRead.o readLoad.o \
+OBJECTS = soloInputFeatureUMI.o SoloFeature_countSmartSeq.o SoloFeature_redistributeReadsByCB.o \
+	SoloFeature_quantTranscript.o SoloFeature_sumThreads.o SoloFeature_countVelocyto.o SoloFeature_countCBgeneUMI.o \
+	Transcriptome_classifyAlign.o SoloFeature_cellFiltering.o \
+	SoloFeature_statsOutput.o bamSortByCoordinate.o SoloBarcode.o \
+	ParametersSolo.o SoloRead.o SoloRead_record.o \
+	SoloReadBarcode.o SoloReadBarcode_getCBandUMI.o SoloBarcode_extractBarcode.o \
+	SoloReadFeature.o SoloReadFeature_record.o SoloReadFeature_inputRecords.o \
+	Solo.o SoloFeature.o SoloFeature_collapseUMI.o SoloFeature_outputResults.o SoloFeature_processRecords.o SoloFeature_addBAMtags.o \
+	ReadAlign_transformGenome.o Genome_transformGenome.o Transcript_convertGenomeCigar.o \
+	twoPassRunPass1.o samHeaders.o Genome_genomeLoad.o Genome_genomeOutLoad.o Transcript_transformGenome.o ReadAlign_outputSpliceGraphSAM.o \
+	ReadAlign_mapOneReadSpliceGraph.o SpliceGraph.o SpliceGraph_swScoreSpliced.o SpliceGraph_swTraceBack.o \
+	SpliceGraph_findSuperTr.o sjAlignSplit.o \
+	GTF.o GTF_transcriptGeneSJ.o GTF_superTranscript.o SuperTranscriptome.o \
+	ReadAlign_outputAlignments.o  \
+	ReadAlign.o STAR.o \
+	SharedMemory.o PackedArray.o SuffixArrayFuns.o Parameters.o Parameters_samAttributes.o InOutStreams.o SequenceFuns.o Genome.o Stats.o \
+	Transcript.o Transcript_alignScore.o Transcript_generateCigarP.o Chain.o \
+	Transcript_variationAdjust.o Variation.o ReadAlign_waspMap.o \
+	ReadAlign_storeAligns.o ReadAlign_stitchPieces.o ReadAlign_multMapSelect.o ReadAlign_mapOneRead.o readLoad.o \
 	ReadAlignChunk.o ReadAlignChunk_processChunks.o ReadAlignChunk_mapChunk.o \
 	OutSJ.o outputSJ.o blocksOverlap.o ThreadControl.o sysRemoveDir.o \
-        ReadAlign_maxMappableLength2strands.o binarySearch2.o\
-	ReadAlign_outputAlignments.o  \
+	ReadAlign_maxMappableLength2strands.o binarySearch2.o\
 	ReadAlign_outputTranscriptSAM.o ReadAlign_outputTranscriptSJ.o ReadAlign_outputTranscriptCIGARp.o ReadAlign_calcCIGAR.cpp \
-        ReadAlign_createExtendWindowsWithAlign.o ReadAlign_assignAlignToWindow.o ReadAlign_oneRead.o \
-	ReadAlign_stitchWindowSeeds.o ReadAlign_chimericDetection.o \
-        stitchWindowAligns.o extendAlign.o stitchAlignToTranscript.o alignSmithWaterman.o \
-        genomeGenerate.o genomeParametersWrite.o genomeScanFastaFiles.o genomeSAindex.o \
-        Genome_insertSequences.o insertSeqSA.o funCompareUintAndSuffixes.o sortSuffixesBucket.o funCompareUintAndSuffixesMemcmp.o \
-	TimeFunctions.o ErrorWarning.o loadGTF.o streamFuns.o stringSubstituteAll.o \
-        Transcriptome.o Transcriptome_quantAlign.o ReadAlign_quantTranscriptome.o Quantifications.o Transcriptome_geneCountsAddAlign.o \
-        sjdbLoadFromFiles.o sjdbLoadFromStream.o sjdbPrepare.o sjdbBuildIndex.o sjdbInsertJunctions.o mapThreadsSpawn.o \
-        Parameters_openReadsFiles.cpp Parameters_closeReadsFiles.cpp Parameters_readSAMheader.o \
-        BAMoutput.o BAMfunctions.o ReadAlign_alignBAM.o BAMbinSortByCoordinate.o signalFromBAM.o bamRemoveDuplicates.o BAMbinSortUnmapped.o \
-        bam_cat.o \
-        GlobalVariables.cpp
+	ReadAlign_createExtendWindowsWithAlign.o ReadAlign_assignAlignToWindow.o ReadAlign_oneRead.o \
+	ReadAlign_stitchWindowSeeds.o \
+	ReadAlign_peOverlapMergeMap.o ReadAlign_mappedFilter.o \
+	ParametersChimeric_initialize.o ReadAlign_chimericDetection.o ReadAlign_chimericDetectionOld.o ReadAlign_chimericDetectionOldOutput.o\
+	ChimericDetection.o ChimericDetection_chimericDetectionMult.o ReadAlign_chimericDetectionPEmerged.o \
+	stitchWindowAligns.o extendAlign.o stitchAlignToTranscript.o \
+	ChimericSegment.cpp ChimericAlign.cpp ChimericAlign_chimericJunctionOutput.o ChimericAlign_chimericBAMoutput.o ChimericAlign_chimericStitching.o \
+	Genome_genomeGenerate.o genomeParametersWrite.o genomeScanFastaFiles.o genomeSAindex.o \
+	Genome_insertSequences.o Genome_consensusSequence.o \
+	insertSeqSA.o funCompareUintAndSuffixes.o funCompareUintAndSuffixesMemcmp.o \
+	TimeFunctions.o ErrorWarning.o streamFuns.o stringSubstituteAll.o \
+	Transcriptome.o Transcriptome_quantAlign.o Transcriptome_geneFullAlignOverlap.o \
+	ReadAlign_quantTranscriptome.o Quantifications.o Transcriptome_geneCountsAddAlign.o \
+	sjdbLoadFromFiles.o sjdbLoadFromStream.o sjdbPrepare.o sjdbBuildIndex.o sjdbInsertJunctions.o mapThreadsSpawn.o \
+	Parameters_readFilesInit.o Parameters_openReadsFiles.cpp Parameters_closeReadsFiles.cpp Parameters_readSAMheader.o \
+	bam_cat.o serviceFuns.o GlobalVariables.cpp \
+	BAMoutput.o BAMfunctions.o ReadAlign_alignBAM.o BAMbinSortByCoordinate.o signalFromBAM.o bamRemoveDuplicates.o BAMbinSortUnmapped.o
 
 SOURCES := $(wildcard *.cpp) $(wildcard *.c)
 
@@ -65,6 +86,10 @@ all: STAR
 clean:
 	rm -f *.o STAR STARstatic STARlong Depend.list
 
+.PHONY: clean_solo
+clean_solo:
+	rm -f Solo*.o
+
 .PHONY: CLEAN
 CLEAN:
 	rm -f *.o STAR Depend.list
@@ -74,10 +99,6 @@ CLEAN:
 cleanRelease:
 	rm -f *.o Depend.list
 	$(MAKE) -C htslib clean
-
-.PHONY: install
-install:
-	'mv' STAR STARlong ../bin
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanRelease)
@@ -147,5 +168,3 @@ STARlongForMacStatic : CXXFLAGS := -D'COMPILE_FOR_LONG_READS' $(CXXFLAGSextra) $
 STARlongForMacStatic : LDFLAGS := $(LDFLAGSextra) $(LDFLAGS_Mac_static) $(LDFLAGS)
 STARlongForMacStatic : Depend.list parametersDefault.xxd $(OBJECTS)
 	$(CXX) -o STARlong $(CXXFLAGS) $(OBJECTS) $(LDFLAGS)
-
-

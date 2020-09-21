@@ -22,6 +22,7 @@
 #include <limits>
 #include <stdint.h>
 #include <omp.h>
+#include <math.h>
 
 #include "VERSION"
 
@@ -66,10 +67,11 @@ typedef uint8_t uint8;
 #define intSWscore int
 #define intScore int
 
+#define scoreMatch 1
+
 //cleaned
 //output
 #define BAMoutput_oneAlignMaxBytes 100000
-
 
 //SAM attributes
 #define ATTR_NH 1
@@ -82,8 +84,24 @@ typedef uint8_t uint8;
 #define ATTR_jI 8
 #define ATTR_XS 9
 #define ATTR_RG 10
-#define ATTR_ch 11
-#define ATTR_MC 12
+#define ATTR_vG 11
+#define ATTR_vA 12
+#define ATTR_vW 13
+#define ATTR_ch 14
+#define ATTR_MC 15
+#define ATTR_rB 16
+#define ATTR_CR 17
+#define ATTR_CY 18
+#define ATTR_UR 19
+#define ATTR_UY 20
+#define ATTR_CB 21
+#define ATTR_UB 22
+#define ATTR_GX 23
+#define ATTR_GN 24
+#define ATTR_sM 25
+#define ATTR_sS 26
+#define ATTR_sQ 27
+#define ATTR_ha 28
 
 //BAM definitions
 #define BAM_CIGAR_MaxSize 10000
@@ -99,16 +117,17 @@ typedef uint8_t uint8;
 #define BAM_CIGAR_X 8
 
 
+
+#define BAM_ATTR_MaxSize 10000
+
 #if defined COMPILE_FOR_LONG_READS
     #define MAX_N_EXONS 1000
-    #define BAM_ATTR_MaxSize 10000
 #else
     #define MAX_N_EXONS 20
-    #define BAM_ATTR_MaxSize 1000
 #endif
 
 //input reads
-#define MAX_N_MATES 2
+#define MAX_N_MATES 3
 #define DEF_readNameLengthMax 50000
 #if defined COMPILE_FOR_LONG_READS
     #define DEF_readSeqLengthMax 500000
@@ -133,6 +152,7 @@ typedef uint8_t uint8;
 #define EXIT_CODE_FILE_OPEN 109
 #define EXIT_CODE_FILE_WRITE 110
 #define EXIT_CODE_INCONSISTENT_DATA 111
+#define EXIT_CODE_FIFO 112
 
 //cleaned-end
 

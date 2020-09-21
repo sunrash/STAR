@@ -127,18 +127,132 @@ void nuclPackBAM(char* ReadsIn, char* ReadsOut, uint Lread) {//pack nucleotides 
     };
 };
 
-void convertNucleotidesToNumbers(const char* R0, char* R1, uint Lread) {//transform sequence  from ACGT into 0-1-2-3 code
+void convertNucleotidesToNumbers(const char* R0, char* R1, const uint Lread) {//transform sequence  from ACGT into 0-1-2-3 code
     for (uint jj=0;jj<Lread;jj++) {
                     switch (int(R0[jj])){
-                        case (65): case(97):  R1[jj]=char(0);break;//A
-                        case (67): case(99):  R1[jj]=char(1);break;//C
-                        case (71): case(103): R1[jj]=char(2);break;//G
-                        case (84): case(116): R1[jj]=char(3);break;//T
-//                         case (78): R1[jj]=char(9);break;//N
-                        default:   R1[jj]=char(9);//anything else
+                        case (65): case(97):
+                            R1[jj]=char(0);break;//A
+                        case (67): case(99):
+                            R1[jj]=char(1);break;//C
+                        case (71): case(103):
+                            R1[jj]=char(2);break;//G
+                        case (84): case(116):
+                            R1[jj]=char(3);break;//T
+                        default:
+                            R1[jj]=char(4);//anything else is converted to N
                     };
                 };
 };
+
+uint convertNucleotidesToNumbersRemoveControls(const char* R0, char* R1, const uint Lread) {//transform sequence  from ACGT into 0-1-2-3 code
+    uint iR1=0;
+    for (uint jj=0;jj<Lread;jj++) {
+        switch (int(R0[jj])){
+            case (65): case(97):
+                R1[jj]=char(0);break;//A
+            case (67): case(99):
+                R1[jj]=char(1);break;//C
+            case (71): case(103):
+                R1[jj]=char(2);break;//G
+            case (84): case(116):
+                R1[jj]=char(3);break;//T
+            default:
+                if (int(R0[jj]) < 32) {//control characters are skipped
+                    continue;
+                } else {//all non-control non-ACGT characters are convreted to N
+                    R1[jj]=char(4);//anything else
+                };
+        };
+        ++iR1;
+    };
+    return iR1;
+};
+
+
+char convertNt01234(const char R0) {//transform sequence  from ACGT into 0-1-2-3 code
+    switch(R0)
+    {
+        case('a'):
+        case('A'):
+            return 0;
+            break;
+        case('c'):
+        case('C'):
+            return 1;
+            break;
+        case('g'):
+        case('G'):
+            return 2;
+            break;
+        case('t'):
+        case('T'):
+            return 3;
+            break;
+        default:
+            return 4;
+    };
+};
+
+int32 convertNuclStrToInt32(const string S, uint32 &intOut) {
+    intOut=0;
+    int32 posN=-1;
+    for (uint32 ii=0; ii<S.size(); ii++) {
+        uint32 nt = (uint32) convertNt01234(S.at(ii));
+        if (nt>3) {//N
+            if (posN>=0)
+                return -2; //two Ns
+            posN=ii;
+            nt=0;
+        };
+        intOut = intOut << 2;
+        intOut +=nt;
+        //intOut += nt<<(2*ii);
+    };
+    return posN;
+};
+
+string convertNuclInt32toString(uint32 nuclNum, const uint32 L) {
+    string nuclOut(L,'N');
+    string nuclChar="ACGT";
+
+    for (uint32 ii=1; ii<=L; ii++) {
+        nuclOut[L-ii] = nuclChar[nuclNum & 3];
+        nuclNum = nuclNum >> 2;
+    };
+
+    return nuclOut;
+};
+
+int64 convertNuclStrToInt64(const string S, uint64 &intOut) {
+    intOut=0;
+    int64 posN=-1;
+    for (uint64 ii=0; ii<S.size(); ii++) {
+        uint64 nt = (uint64) convertNt01234(S.at(ii));
+        if (nt>3) {//N
+            if (posN>=0)
+                return -2; //two Ns
+            posN=ii;
+            nt=0;
+        };
+        intOut = intOut << 2;
+        intOut +=nt;
+        //intOut += nt<<(2*ii);
+    };
+    return posN;
+};
+
+string convertNuclInt64toString(uint64 nuclNum, const uint32 L) {
+    string nuclOut(L,'N');
+    string nuclChar="ACGT";
+
+    for (uint64 ii=1; ii<=L; ii++) {
+        nuclOut[L-ii] = nuclChar[nuclNum & 3];
+        nuclNum = nuclNum >> 2;
+    };
+
+    return nuclOut;
+};
+
 
 uint chrFind(uint Start, uint i2, uint* chrStart) {// find chromosome from global locus
     uint i1=0, i3;
@@ -175,6 +289,51 @@ uint localSearch(const char *x, uint nx, const char *y, uint ny, double pMM){
         };
     };
     return ixBest;
+};
+
+uint localSearchNisMM(const char *x, uint nx, const char *y, uint ny, double pMM){
+    //find the best alignment of two short sequences x and y
+    //pMM is the maximum percentage of mismatches
+    //Ns in x OR y are considered mismatches
+    uint nMatch=0, nMM=0, nMatchBest=0, nMMbest=0, ixBest=nx;
+    for (uint ix=0;ix<nx;ix++) {
+        nMatch=0; nMM=0;
+        for (uint iy=0;iy<min(ny,nx-ix);iy++) {
+            if (x[ix+iy]==y[iy] && y[iy]<4) {
+                nMatch++;
+            } else {
+                nMM++;
+            };
+        };
+
+        if ( ( nMatch>nMatchBest || (nMatch==nMatchBest && nMM<nMMbest) ) && double(nMM)/double(nMatch)<=pMM) {
+            ixBest=ix;
+            nMatchBest=nMatch;
+            nMMbest=nMM;
+        };
+    };
+    return ixBest;
+};
+
+uint32 localAlignHammingDist(const string &text, const string &query, uint32 &pos)
+{
+    uint32 distBest=query.size();
+    if (text.size()<query.size()) {//query is longer than text, no match
+    	return text.size()+1;
+    };
+    for (uint32 ii=0; ii<text.size()-query.size()+1; ii++) {
+        uint32 dist1=0;
+        for (uint32 jj=0; jj<query.size(); jj++) {
+            if (query[jj]!='N' && text[jj+ii]!=query[jj]) {//N in query does not count as mismatch
+                ++dist1;
+            };
+        };
+        if (dist1<distBest) {
+            distBest=dist1;
+            pos=ii;
+        };
+    };
+    return distBest;
 };
 
 uint qualitySplit(char* r, char* q, uint L, char Qsplit, uint maxNsplit, uint  minLsplit, uint** splitR) {

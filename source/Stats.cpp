@@ -12,6 +12,7 @@ void Stats::resetN() {//zero all counters
         splicesN[ii]=0;
     };
 
+    qualHist={{}};
 };
 
 Stats::Stats() {//constructor
@@ -40,6 +41,9 @@ void Stats::transcriptStats(Transcript &T, uint Lread) {
     mappedInsL += T.lIns;
     mappedDelL += T.lDel;
 
+    if (T.nExons==0)
+        return;
+    
     uint mappedL=0;
     for (uint ii=0; ii<T.nExons; ii++) {
         mappedL += T.exons[ii][EX_L];
@@ -130,8 +134,11 @@ void Stats::reportFinal(ofstream &streamOut) {
                <<setw(w1)<< "Number of reads mapped to too many loci |\t"      << unmappedMulti <<"\n" \
                <<setw(w1)<< "% of reads mapped to too many loci |\t"           << (readN>0 ? double(unmappedMulti)/double(readN)*100 : 0) <<'%' <<"\n" \
                <<setw(w1)<< "UNMAPPED READS:\n" \
+               <<setw(w1)<< "Number of reads unmapped: too many mismatches |\t"<< unmappedMismatch<<"\n" \
                <<setw(w1)<< "% of reads unmapped: too many mismatches |\t"     << (readN>0 ? double(unmappedMismatch)/double(readN)*100 : 0) <<'%' <<"\n" \
+               <<setw(w1)<< "Number of reads unmapped: too short |\t"          << unmappedShort <<"\n" \
                <<setw(w1)<< "% of reads unmapped: too short |\t"               << (readN>0 ? double(unmappedShort)/double(readN)*100 : 0) <<'%' <<"\n" \
+               <<setw(w1)<< "Number of reads unmapped: other |\t"              << unmappedOther <<"\n" \
                <<setw(w1)<< "% of reads unmapped: other |\t"                   << (readN>0 ? double(unmappedOther)/double(readN)*100 :0) <<'%'<<"\n" \
                <<setw(w1)<< "CHIMERIC READS:\n" \
                <<setw(w1)<< "Number of chimeric reads |\t"                     << chimericAll <<"\n" \
@@ -139,4 +146,26 @@ void Stats::reportFinal(ofstream &streamOut) {
 
 };
 
+void Stats::writeLines(ofstream &streamOut, const vector<int> outType, const string commStr, const string outStr) {
+    for (const auto& tt : outType) {
+        if (tt==1) {
+            if (outStr!="")
+                streamOut << commStr <<" "<< outStr <<"\n";
+            streamOut << commStr <<" "<< "Nreads " << readN <<"\t"<< "NreadsUnique " << mappedReadsU <<"\t"<< "NreadsMulti " << mappedReadsM << "\n";
+        };
+    };
+};
 
+void Stats::qualHistCalc(const uint64 imate, const char* qual, const uint64 len)
+{//calculates histogram of quality scores for each imate        
+    for (uint64 ix=0; ix<len; ix++) {
+            qualHist[imate][(uint8)qual[ix]]++;
+    };
+};
+
+//void Stats::qualHistCalcSolo(const uint64 imate, const char* qual, const vector<uint32> stlen)// start1, const uint64 len1, const uint64 len1,)
+//{//calculates histogram of quality scores for each imate        
+//     for (uint64 ix=0; ix<len; ix++) {
+//             qualHist[imate][(uint8)qual[ix]]++;
+//     };
+//};

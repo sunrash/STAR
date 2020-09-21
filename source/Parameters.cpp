@@ -9,6 +9,7 @@
 #include "GlobalVariables.h"
 #include "signalFromBAM.h"
 #include "bamRemoveDuplicates.h"
+#include "streamFuns.h"
 
 //for mkfifo
 #include <sys/stat.h>
@@ -20,8 +21,7 @@ Parameters::Parameters() {//initalize parameters info
     inOut = new InOutStreams;
 
     //versions
-    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "versionSTAR", &versionSTAR));
-    parArray.push_back(new ParameterInfoVector <uint> (-1, -1, "versionGenome", &versionGenome));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "versionGenome", &versionGenome));
 
     //parameters
     parArray.push_back(new ParameterInfoVector <string> (-1, 2, "parametersFiles", &parametersFiles));
@@ -36,26 +36,33 @@ Parameters::Parameters() {//initalize parameters info
     parArray.push_back(new ParameterInfoScalar <int> (-1, -1, "runRNGseed", &runRNGseed));
 
     //genome
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeDir", &genomeDir));
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeLoad", &genomeLoad));
-    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "genomeFastaFiles", &genomeFastaFiles));
-    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "genomeChainFiles", &genomeChainFiles));
-    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "genomeSAindexNbases", &genomeSAindexNbases));
-    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "genomeChrBinNbits", &genomeChrBinNbits));
-    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "genomeSAsparseD", &genomeSAsparseD));
-    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "genomeSuffixLengthMax", &genomeSuffixLengthMax));
-    parArray.push_back(new ParameterInfoVector <uint> (-1, -1, "genomeFileSizes", &genomeFileSizes));
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeConsensusFile", &genomeConsensusFile));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeType", &pGe.gTypeString));    
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeDir", &pGe.gDir));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeLoad", &pGe.gLoad));
+    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "genomeFastaFiles", &pGe.gFastaFiles));
+    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "genomeChainFiles", &pGe.gChainFiles));
+    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "genomeSAindexNbases", &pGe.gSAindexNbases));
+    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "genomeChrBinNbits", &pGe.gChrBinNbits));
+    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "genomeSAsparseD", &pGe.gSAsparseD));
+    parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "genomeSuffixLengthMax", &pGe.gSuffixLengthMax));
+    parArray.push_back(new ParameterInfoVector <uint> (-1, -1, "genomeFileSizes", &pGe.gFileSizes));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeConsensusFile", &pGe.gConsensusFile));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeTransformType", &pGe.transform.typeString));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "genomeTransformVCF", &pGe.transform.vcfFile));
 
     //read
     parArray.push_back(new ParameterInfoVector <string> (-1, -1, "readFilesType", &readFilesType));
     parArray.push_back(new ParameterInfoVector <string> (-1, -1, "readFilesIn", &readFilesIn));
     parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "readFilesPrefix", &readFilesPrefix));
     parArray.push_back(new ParameterInfoVector <string> (-1, -1, "readFilesCommand", &readFilesCommand));
-    
+
     parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "readMatesLengthsIn", &readMatesLengthsIn));
     parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "readMapNumber", &readMapNumber));
     parArray.push_back(new ParameterInfoVector <string> (-1, -1, "readNameSeparator", &readNameSeparator));
+    parArray.push_back(new ParameterInfoScalar <uint32> (-1, -1, "readQualityScoreBase", &readQualityScoreBase));
+    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "readFilesManifest", &readFilesManifest));
+
+    //parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "readStrand", &pReads.strandString));
 
 
     //input from BAM
@@ -73,7 +80,7 @@ Parameters::Parameters() {//initalize parameters info
     parArray.push_back(new ParameterInfoScalar <uint>   (-1, -1, "limitOutSJoneRead", &limitOutSJoneRead));
     parArray.push_back(new ParameterInfoScalar <uint>   (-1, -1, "limitBAMsortRAM", &limitBAMsortRAM));
     parArray.push_back(new ParameterInfoScalar <uint>   (-1, -1, "limitSjdbInsertNsj", &limitSjdbInsertNsj));
-
+    parArray.push_back(new ParameterInfoScalar <uint>   (-1, -1, "limitNreadsSoft", &limitNreadsSoft));
 
     //output
     parArray.push_back(new ParameterInfoScalar <string>     (-1, 2, "outFileNamePrefix", &outFileNamePrefix));
@@ -87,7 +94,7 @@ Parameters::Parameters() {//initalize parameters info
     //outSAM
     parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "outSAMtype", &outSAMtype));
     parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "outSAMmode", &outSAMmode));
-    parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "outSAMstrandField", &outSAMstrandField));
+    parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "outSAMstrandField", &outSAMstrandField.in));
     parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "outSAMattributes", &outSAMattributes));
     parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "outSAMunmapped", &outSAMunmapped.mode));
     parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "outSAMorder", &outSAMorder));
@@ -102,9 +109,11 @@ Parameters::Parameters() {//initalize parameters info
     parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "outSAMheaderCommentFile", &outSAMheaderCommentFile));
     parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "outBAMcompression", &outBAMcompression));
     parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "outBAMsortingThreadN", &outBAMsortingThreadN));
+    parArray.push_back(new ParameterInfoScalar <uint32>        (-1, -1, "outBAMsortingBinsN", &outBAMsortingBinsN));
     parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "outSAMfilter", &outSAMfilter.mode));
     parArray.push_back(new ParameterInfoScalar <uint>     (-1, -1, "outSAMmultNmax", &outSAMmultNmax));
     parArray.push_back(new ParameterInfoScalar <uint>     (-1, -1, "outSAMattrIHstart", &outSAMattrIHstart));
+    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "outSAMtlen", &outSAMtlen));
 
 
    //output SJ filtering
@@ -177,7 +186,8 @@ Parameters::Parameters() {//initalize parameters info
     parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "seedNoneLociPerWindow", &seedNoneLociPerWindow));
     parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "seedMultimapNmax", &seedMultimapNmax));
     parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "seedSplitMin", &seedSplitMin));
-
+    parArray.push_back(new ParameterInfoScalar <uint64>       (-1, -1, "seedMapMin", &seedMapMin));
+    
     parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "alignIntronMin", &alignIntronMin));
     parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "alignIntronMax", &alignIntronMax));
     parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "alignMatesGapMax", &alignMatesGapMax));
@@ -192,34 +202,52 @@ Parameters::Parameters() {//initalize parameters info
     parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "alignWindowsPerReadNmax", &alignWindowsPerReadNmax));
     parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "alignTranscriptsPerWindowNmax", &alignTranscriptsPerWindowNmax));
     parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "alignEndsType", &alignEndsType.in));
-    parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "alignSoftClipAtReferenceEnds", &alignSoftClipAtReferenceEnds));
+    parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "alignSoftClipAtReferenceEnds", &alignSoftClipAtReferenceEnds.in));
 
     parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "alignEndsProtrude", &alignEndsProtrude.in));
+    parArray.push_back(new ParameterInfoScalar <string>     (-1, -1, "alignInsertionFlush", &alignInsertionFlush.in));
 
+    //peOverlap
+    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "peOverlapNbasesMin", &peOverlap.NbasesMin));
+    parArray.push_back(new ParameterInfoScalar <double>     (-1, -1, "peOverlapMMp", &peOverlap.MMp));
 
     //chimeric
-    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimSegmentMin", &chimSegmentMin));
-    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "chimScoreMin", &chimScoreMin));
-    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "chimScoreDropMax", &chimScoreDropMax));
-    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "chimScoreSeparation", &chimScoreSeparation));
-    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "chimScoreJunctionNonGTAG", &chimScoreJunctionNonGTAG));
-    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimMainSegmentMultNmax", &chimMainSegmentMultNmax));
-    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimJunctionOverhangMin", &chimJunctionOverhangMin));
-    parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "chimOutType", &chim.out.type));
-    parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "chimFilter", &chimFilter));
-    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimSegmentReadGapMax", &chimSegmentReadGapMax));
+    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimSegmentMin", &pCh.segmentMin));
+    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "chimScoreMin", &pCh.scoreMin));
+    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "chimScoreDropMax", &pCh.scoreDropMax));
+    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "chimScoreSeparation", &pCh.scoreSeparation));
+    parArray.push_back(new ParameterInfoScalar <int>        (-1, -1, "chimScoreJunctionNonGTAG", &pCh.scoreJunctionNonGTAG));
+    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimMainSegmentMultNmax", &pCh.mainSegmentMultNmax));
+    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimJunctionOverhangMin", &pCh.junctionOverhangMin));
+    parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "chimOutType", &pCh.out.type));
+    parArray.push_back(new ParameterInfoVector <string>     (-1, -1, "chimFilter", &pCh.filter.stringIn));
+    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimSegmentReadGapMax", &pCh.segmentReadGapMax));
+    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimMultimapNmax", &pCh.multimapNmax));
+    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimMultimapScoreRange", &pCh.multimapScoreRange));
+    parArray.push_back(new ParameterInfoScalar <uint>       (-1, -1, "chimNonchimScoreDropMin", &pCh.nonchimScoreDropMin));
+    parArray.push_back(new ParameterInfoVector <int>        (-1, -1, "chimOutJunctionFormat", &pCh.outJunctionFormat));
 
     //sjdb
-    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "sjdbFileChrStartEnd", &sjdbFileChrStartEnd));
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFfile", &sjdbGTFfile));
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFchrPrefix", &sjdbGTFchrPrefix));
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFfeatureExon", &sjdbGTFfeatureExon));
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFtagExonParentTranscript", &sjdbGTFtagExonParentTranscript));
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFtagExonParentGene", &sjdbGTFtagExonParentGene));
-    parArray.push_back(new ParameterInfoScalar <uint>   (-1, -1, "sjdbOverhang", &sjdbOverhang));
-    sjdbOverhang_par=parArray.size()-1;
-    parArray.push_back(new ParameterInfoScalar <int>    (-1, -1, "sjdbScore", &sjdbScore));
-    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbInsertSave", &sjdbInsert.save));
+    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "sjdbFileChrStartEnd", &pGe.sjdbFileChrStartEnd));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFfile", &pGe.sjdbGTFfile));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFchrPrefix", &pGe.sjdbGTFchrPrefix));
+    
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFfeatureExon", &pGe.sjdbGTFfeatureExon));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFtagExonParentTranscript", &pGe.sjdbGTFtagExonParentTranscript));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbGTFtagExonParentGene", &pGe.sjdbGTFtagExonParentGene));
+    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "sjdbGTFtagExonParentGeneName", &pGe.sjdbGTFtagExonParentGeneName));
+    parArray.push_back(new ParameterInfoVector <string> (-1, -1, "sjdbGTFtagExonParentGeneType", &pGe.sjdbGTFtagExonParentGeneType));
+
+    parArray.push_back(new ParameterInfoScalar <uint>   (-1, -1, "sjdbOverhang", &pGe.sjdbOverhang));
+    pGe.sjdbOverhang_par=parArray.size()-1;
+    parArray.push_back(new ParameterInfoScalar <int>    (-1, -1, "sjdbScore", &pGe.sjdbScore));
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "sjdbInsertSave", &pGe.sjdbInsertSave));
+
+    //variation
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "varVCFfile", &var.vcfFile));
+
+    //WASP
+    parArray.push_back(new ParameterInfoScalar <string> (-1, -1, "waspOutputMode", &wasp.outputMode));
 
     //quant
     parArray.push_back(new ParameterInfoVector <string> (-1, -1, "quantMode", &quant.mode));
@@ -231,10 +259,27 @@ Parameters::Parameters() {//initalize parameters info
     twoPass.pass1readsN_par=parArray.size()-1;
     parArray.push_back(new ParameterInfoScalar <string>   (-1, -1, "twopassMode", &twoPass.mode));
 
-
-//     //SW parameters
-//     parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "swMode", &swMode));
-//     parArray.push_back(new ParameterInfoScalar <uint> (-1, -1, "swWinCoverageMinP", &swWinCoverageMinP));
+    //solo
+    parArray.push_back(new ParameterInfoScalar <string>   (-1, -1, "soloType", &pSolo.typeStr));
+    parArray.push_back(new ParameterInfoScalar <uint32>   (-1, -1, "soloCBstart", &pSolo.cbS));
+    parArray.push_back(new ParameterInfoScalar <uint32>   (-1, -1, "soloUMIstart", &pSolo.umiS));
+    parArray.push_back(new ParameterInfoScalar <uint32>   (-1, -1, "soloCBlen", &pSolo.cbL));
+    parArray.push_back(new ParameterInfoScalar <uint32>   (-1, -1, "soloUMIlen", &pSolo.umiL));
+    parArray.push_back(new ParameterInfoScalar <uint32>   (-1, -1, "soloBarcodeReadLength", &pSolo.bL));
+    parArray.push_back(new ParameterInfoVector <string>   (-1, -1, "soloCBwhitelist", &pSolo.soloCBwhitelist));
+    parArray.push_back(new ParameterInfoScalar <string>   (-1, -1, "soloStrand", &pSolo.strandStr));
+    parArray.push_back(new ParameterInfoVector <string>   (-1, -1, "soloOutFileNames", &pSolo.outFileNames));
+    parArray.push_back(new ParameterInfoVector <string>   (-1, -1, "soloFeatures", &pSolo.featureIn));
+    parArray.push_back(new ParameterInfoVector <string>   (-1, -1, "soloUMIdedup", &pSolo.umiDedup));
+    parArray.push_back(new ParameterInfoScalar <string>   (-1, -1, "soloAdapterSequence",&pSolo.adapterSeq));
+    parArray.push_back(new ParameterInfoScalar <uint32>   (-1, -1, "soloAdapterMismatchesNmax", &pSolo.adapterMismatchesNmax));
+    parArray.push_back(new ParameterInfoScalar <string>    (-1, -1, "soloCBmatchWLtype", &pSolo.CBmatchWL.type));
+    parArray.push_back(new ParameterInfoVector <string>   (-1, -1, "soloCBposition",&pSolo.cbPositionStr));
+    parArray.push_back(new ParameterInfoScalar <string>   (-1, -1, "soloUMIposition",&pSolo.umiPositionStr));
+    parArray.push_back(new ParameterInfoVector <string>   (-1, -1, "soloCellFilter",&pSolo.cellFilter.type));
+    parArray.push_back(new ParameterInfoVector <string>   (-1, -1, "soloUMIfiltering",&pSolo.umiFiltering.type));
+    parArray.push_back(new ParameterInfoScalar <string>   (-1, -1, "soloClusterCBfile",&pSolo.clusterCBfile));
+    parArray.push_back(new ParameterInfoScalar <string>   (-1, -1, "soloOutFormatFeaturesGeneField3",&pSolo.outFormat.featuresGeneField3));
 
     parameterInputName.push_back("Default");
     parameterInputName.push_back("Command-Line-Initial");
@@ -245,6 +290,9 @@ Parameters::Parameters() {//initalize parameters info
 
 
 void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters: default, from files, from command line
+    
+    //hard-coded parameters
+    runRestart.type=0;
 
 ///////// Default parameters
 
@@ -284,8 +332,7 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
                     val ='\"' + val + '\"';
                 };
                 commandLineFile += '\n' + key + ' ' + val;
-            }
-            else if (oneArg.substr(0,2)=="--") {//parameter name, cut --
+            } else if (oneArg.substr(0,2)=="--") {//parameter name, cut --
                 commandLineFile +='\n' + oneArg.substr(2);
             } else {//parameter value
                 if (oneArg.find_first_of(" \t")!=std::string::npos) {//there is white space in the argument, put "" around
@@ -299,12 +346,10 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         scanAllLines(parStreamCommandLine, 1, 2); //read only initial Command Line parameters
     };
 
-//     need to be careful since runMode and genomeDir are not Command-Line-Initial
-//     if (runMode=="genomeGenerate" && outFileNamePrefix=="./") {// for genome generation, output into genomeDir
-//         outFileNamePrefix=genomeDir;
-//     };
+	createDirectory(outFileNamePrefix, S_IRWXU, "--outFileNamePrefix", *this); //TODO: runDirPerm is hard-coded now. Need to load it from command-line
 
-    inOut->logMain.open((outFileNamePrefix + "Log.out").c_str());
+    outLogFileName=outFileNamePrefix + "Log.out";
+    inOut->logMain.open(outLogFileName.c_str());
     if (inOut->logMain.fail()) {
         ostringstream errOut;
         errOut <<"EXITING because of FATAL ERROR: could not create output file: "<<outFileNamePrefix + "Log.out"<<"\n";
@@ -312,10 +357,11 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
-    inOut->logMain << "STAR version=" << STAR_VERSION << "\n"<<flush;
-    inOut->logMain << "STAR compilation time,server,dir=" << COMPILATION_TIME_PLACE << "\n"<<flush;
-
-
+    inOut->logMain << "STAR version=" << STAR_VERSION << "\n";
+    inOut->logMain << "STAR compilation time,server,dir=" << COMPILATION_TIME_PLACE << "\n";
+    #ifdef COMPILE_FOR_LONG_READS
+           inOut->logMain << "Compiled for LONG reads" << "\n";
+    #endif
 
     //define what goes to cout
     if (outStd=="Log") {
@@ -330,13 +376,15 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
+    /*
     inOut->logMain << "##### DEFAULT parameters:\n" <<flush;
     for (uint ii=0; ii<parArray.size(); ii++) {
         if (parArray[ii]->inputLevel==0) {
             inOut->logMain << setw(PAR_NAME_PRINT_WIDTH) << parArray[ii]->nameString <<"    "<< *(parArray[ii]) << endl;
         };
     };
-
+    */
+    
     inOut->logMain <<"##### Command Line:\n"<<commandLine <<endl ;
 
     inOut->logMain << "##### Initial USER parameters from Command Line:\n";
@@ -366,7 +414,7 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
 
 ///////// Command Line Final
 
-    if (argInN>1) {//scan all parameters from command line and override previuos values
+    if (argInN>1) {//scan all parameters from command line and override previous values
         inOut->logMain << "###### All USER parameters from Command Line:\n" <<flush;
         istringstream parStreamCommandLine(commandLineFile);
         scanAllLines(parStreamCommandLine, 2, -1);
@@ -389,44 +437,37 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
     commandLineFull=clFull.str();
     inOut->logMain << "\n-------------------------------\n##### Final effective command line:\n" <<  clFull.str() << "\n";
 
-//     parOut.close();
+    /*
+    //     parOut.close();
     inOut->logMain << "\n##### Final parameters after user input--------------------------------:\n" << flush;
-//     parOut.open("Parameters.all.out");
+    //     parOut.open("Parameters.all.out");
     for (uint ii=0; ii<parArray.size(); ii++) {
         inOut->logMain << setw(PAR_NAME_PRINT_WIDTH) << parArray[ii]->nameString <<"    "<< *(parArray[ii]) << endl;
     };
-//     parOut.close();
-
+    //     parOut.close();
+    */
     inOut->logMain << "----------------------------------------\n\n" << flush;
 
 
     ///////////////////////////////////////// Old variables
-    outputBED[0]=0; outputBED[1]=0; //controls the format of starBED output. Will be replaced with HDF5 output
-
-    //annot scoring
-    annotScoreScale=0;
-    annotSignalFile="-";
-
     //splitting
     Qsplit=0;
     maxNsplit=10;
-    minLsplit=seedSplitMin;
-    minLmap=5;
-
 
 
 ////////////////////////////////////////////////////// Calculate and check parameters
     iReadAll=0;
 
-    if (runDirPermIn=="User_RWX")
-    {
+    if (pGe.gDir.back()!='/') {
+    	pGe.gDir += '/';
+    };
+
+    //directory permissions TODO: this needs to be done before outPrefixFileName is created
+    if (runDirPermIn=="User_RWX") {
         runDirPerm=S_IRWXU;
-    } else if (runDirPermIn=="All_RWX")
-    {
-//         umask(0); //this should be defined by the user!
+    } else if (runDirPermIn=="All_RWX") {
         runDirPerm= S_IRWXU | S_IRWXG | S_IRWXO;
-    } else
-    {
+    } else {
         ostringstream errOut;
         errOut << "EXITING because of FATAL INPUT ERROR: unrecognized option in --runDirPerm=" << runDirPerm << "\n";
         errOut << "SOLUTION: use one of the allowed values of --runDirPerm : 'User_RWX' or 'All_RWX' \n";
@@ -435,12 +476,13 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
 
     if (outTmpDir=="-") {
         outFileTmp=outFileNamePrefix +"_STARtmp/";
-        sysRemoveDir (outFileTmp);
+        if (runRestart.type!=1)
+            sysRemoveDir (outFileTmp);
     } else {
-        outFileTmp=outTmpDir;
+        outFileTmp=outTmpDir + "/";
     };
 
-    if (mkdir (outFileTmp.c_str(),runDirPerm)!=0) {
+    if (mkdir (outFileTmp.c_str(),runDirPerm)!=0 && runRestart.type!=1) {
         ostringstream errOut;
         errOut <<"EXITING because of fatal ERROR: could not make temporary directory: "<< outFileTmp<<"\n";
         errOut <<"SOLUTION: (i) please check the path and writing permissions \n (ii) if you specified --outTmpDir, and this directory exists - please remove it before running STAR\n"<<flush;
@@ -503,7 +545,7 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
-    
+
     //remove duplicates parameters
     if (removeDuplicates.mode=="UniqueIdentical")
     {
@@ -518,9 +560,9 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
             ostringstream errOut;
             errOut << "EXITING because of fatal PARAMETERS error: unrecognized option in of --bamRemoveDuplicatesType="<<removeDuplicates.mode<<"\n";
             errOut << "SOLUTION: use allowed option: - or UniqueIdentical or UniqueIdenticalNotMulti";
-            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);        
-    };    
-    
+            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+    };
+
     if (runMode=="alignReads") {
         inOut->logProgress.open((outFileNamePrefix + "Log.progress.out").c_str());
     } else if (runMode=="inputAlignmentsFromBAM") {
@@ -535,7 +577,7 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         } else if (removeDuplicates.mode!="-") {
             *inOut->logStdOut << timeMonthDayTime() << " ..... reading from BAM, remove duplicates, output BAM\n" <<flush;
             inOut->logMain << timeMonthDayTime()    << " ..... reading from BAM, remove duplicates, output BAM\n" <<flush;
-            bamRemoveDuplicates(inputBAMfile,(outFileNamePrefix+"Processed.out.bam").c_str(),this);
+            bamRemoveDuplicates(inputBAMfile, (outFileNamePrefix+"Processed.out.bam").c_str(), *this);
             *inOut->logStdOut << timeMonthDayTime() << " ..... done\n" <<flush;
             inOut->logMain << timeMonthDayTime()    << " ..... done\n" <<flush;
         } else {
@@ -591,7 +633,7 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
                 } else {
                     outBAMsortingThreadNactual=outBAMsortingThreadN;
                 };
-                outBAMcoordNbins=max(outBAMsortingThreadNactual*3,10);
+                outBAMcoordNbins=max((uint32)outBAMsortingThreadNactual*3,outBAMsortingBinsN);
                 outBAMsortingBinStart= new uint64 [outBAMcoordNbins];
                 outBAMsortingBinStart[0]=1;//this initial value means that the bin sizes have not been determined yet
 
@@ -631,7 +673,7 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
     };
 
     //versions
-    for (uint ii=0;ii<2;ii++) {
+    for (uint ii=0;ii<1;ii++) {
         if (parArray[ii]->inputLevel>0) {
             ostringstream errOut;
             errOut <<"EXITING because of fatal input ERROR: the version parameter "<< parArray[ii]->nameString << " cannot be re-defined by the user\n";
@@ -659,7 +701,7 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         errOut <<"EXITING: fatal input ERROR: --outSAMorder=PairedKeepInputOrder is presently only compatible with SAM output, i.e. default --outSMAtype SAM\n";
         errOut <<"SOLUTION: re-run STAR without --outSAMorder=PairedKeepInputOrder, or with --outSAMorder=PairedKeepInputOrder --outSMAtype SAM .\n";
         exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-    };    
+    };
     //SJ filtering
     for (int ii=0;ii<4;ii++) {
         if (outSJfilterOverhangMin.at(ii)<0) outSJfilterOverhangMin.at(ii)=numeric_limits<int32>::max();
@@ -678,56 +720,35 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         inOut->logMain <<"WARNING: specified limitGenomeGenerateRAM="<<limitGenomeGenerateRAM<<" bytes appears to be too large, if you do not have enough memory the code will crash!\n"<<flush;
     };
 
-
-    {//read groups
-        if (outSAMattrRGline.at(0)!="-") {
-            string linefull;
-            for (uint ii=0;ii<outSAMattrRGline.size(); ii++) {//concatenate into one line
-                if (ii==0 || outSAMattrRGline.at(ii)==",") {//start new entry
-                    if (ii>0) ++ii;//skip comma
-                    outSAMattrRGlineSplit.push_back(outSAMattrRGline.at(ii)); //star new RG line with the first field which must be ID:xxx
-                    if (outSAMattrRGlineSplit.back().substr(0,3)!="ID:") {
-                        ostringstream errOut;
-                        errOut <<"EXITING because of FATAL INPUT ERROR: the first word of a line from --outSAMattrRGline="<<outSAMattrRGlineSplit.back()<<" does not start with ID:xxx read group identifier\n";
-                        errOut <<"SOLUTION: re-run STAR with all lines in --outSAMattrRGline starting with ID:xxx\n";
-                        exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-                    };
-                    outSAMattrRG.push_back(outSAMattrRGlineSplit.back().substr(3)); //this adds the ID field
-                } else {//keep adding fields to this RG line, until the next comma
-                    outSAMattrRGlineSplit.back()+="\t" + outSAMattrRGline.at(ii);
-                };
-            };
-        };
-    };
-
     outSAMfilter.KeepOnlyAddedReferences=false;
     outSAMfilter.KeepAllAddedReferences=false;
     outSAMfilter.yes=true;
-    if (outSAMfilter.mode.at(0)=="KeepOnlyAddedReferences")
-    {
+    if (outSAMfilter.mode.at(0)=="KeepOnlyAddedReferences") {
         outSAMfilter.KeepOnlyAddedReferences=true;
-    } else if (outSAMfilter.mode.at(0)=="KeepAllAddedReferences")  
-    {
+    } else if (outSAMfilter.mode.at(0)=="KeepAllAddedReferences") {
         outSAMfilter.KeepAllAddedReferences=true;
-    } else if (outSAMfilter.mode.at(0)=="None")
-    {
+    } else if (outSAMfilter.mode.at(0)=="None") {
       outSAMfilter.yes=false;
-    } else
-    {
+    } else {
         ostringstream errOut;
         errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented value for --outSAMfilter: "<<outSAMfilter.mode.at(0) <<"\n";
         errOut <<"SOLUTION: specify one of the allowed values: KeepOnlyAddedReferences or None\n";
         exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
-    if (outMultimapperOrder.mode=="Old_2.4")
-    {
+    if ( (outSAMfilter.KeepOnlyAddedReferences || outSAMfilter.KeepAllAddedReferences) && pGe.gFastaFiles.at(0)=="-" ) {
+        ostringstream errOut;
+        errOut <<"EXITING because of FATAL INPUT ERROR: --outSAMfilter KeepOnlyAddedReferences OR KeepAllAddedReferences options can only be used if references are added on-the-fly with --genomeFastaFiles" <<"\n";
+        errOut <<"SOLUTION: use default --outSAMfilter None, OR add references with --genomeFataFiles\n";
+        exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+    };
+
+
+    if (outMultimapperOrder.mode=="Old_2.4") {
         outMultimapperOrder.random=false;
-    } else if (outMultimapperOrder.mode=="Random")
-    {
+    } else if (outMultimapperOrder.mode=="Random") {
         outMultimapperOrder.random=true;
-    } else
-    {
+    } else {
         ostringstream errOut;
         errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented value for --outMultimapperOrder: "<<outMultimapperOrder.mode <<"\n";
         errOut <<"SOLUTION: specify one of the allowed values: Old_2.4 or SortedByCoordinate or Random\n";
@@ -735,39 +756,65 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
     };
 
     //read parameters
-    if (readFilesType.at(0)=="Fastx") {
-        readFilesTypeN=1;
-    } else if (readFilesType.at(0)=="SAM"){
-        readFilesTypeN=10;
-    } else {
+    readFilesInit();
+
+    //two-pass
+    if (parArray.at(twoPass.pass1readsN_par)->inputLevel>0  && twoPass.mode=="None") {
         ostringstream errOut;
-        errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented value for --readFilesType: "<<readFilesType.at(0) <<"\n";
-        errOut <<"SOLUTION: specify one of the allowed values: Fastx or SAM\n";
-        exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+        errOut << "EXITING because of fatal PARAMETERS error: --twopass1readsN is defined, but --twoPassMode is not defined\n";
+        errOut << "SOLUTION: to activate the 2-pass mode, use --twopassMode Basic";
+        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
-        
-    if (readFilesTypeN==1) {
-        readNmates=readFilesIn.size(); //for now the number of mates is defined by the number of input files
-    } else if (readFilesTypeN==10) {//find the number of mates from the SAM file
-        if (readFilesType.size()==2 && readFilesType.at(1)=="SE") {
-            readNmates=1;
-        } else if (readFilesType.size()==2 && readFilesType.at(1)=="PE") {
-            readNmates=2;
-        } else {
+
+    twoPass.yes=false;
+    twoPass.pass2=false;
+    if (twoPass.mode!="None") {//2-pass parameters
+        if (runMode!="alignReads") {
             ostringstream errOut;
-            errOut <<"EXITING because of FATAL INPUT ERROR: --readFilesType SAM requires specifying SE or PE reads"<<"\n";
-            errOut <<"SOLUTION: specify --readFilesType SAM SE for single-end reads or --readFilesType SAM PE for paired-end reads\n";
+            errOut << "EXITING because of fatal PARAMETERS error: 2-pass mapping option  can only be used with --runMode alignReads\n";
+            errOut << "SOLUTION: remove --twopassMode option";
+            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+        };
+
+        if (twoPass.mode!="Basic") {
+            ostringstream errOut;
+            errOut << "EXITING because of fatal PARAMETERS error: unrecognized value of --twopassMode="<<twoPass.mode<<"\n";
+            errOut << "SOLUTION: for the 2-pass mode, use allowed values --twopassMode: Basic";
+            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+        };
+
+        if (twoPass.pass1readsN==0) {
+            ostringstream errOut;
+            errOut << "EXITING because of fatal PARAMETERS error: --twopass1readsN = 0 in the 2-pass mode\n";
+            errOut << "SOLUTION: for the 2-pass mode, specify --twopass1readsN > 0. Use a very large number or -1 to map all reads in the 1st pass.\n";
+            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+        };
+
+        if (pGe.gLoad!="NoSharedMemory") {
+            ostringstream errOut;
+            errOut << "EXITING because of fatal PARAMETERS error: 2-pass method is not compatible with --genomeLoad "<<pGe.gLoad<<"\n";
+            errOut << "SOLUTION: re-run STAR with --genomeLoad NoSharedMemory ; this is the only option compatible with --twopassMode Basic .\n";
+            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+        };
+        twoPass.yes=true;
+        twoPass.dir=outFileNamePrefix+"_STARpass1/";
+        sysRemoveDir (twoPass.dir);
+        if (mkdir (twoPass.dir.c_str(),runDirPerm)!=0) {
+            ostringstream errOut;
+            errOut <<"EXITING because of fatal ERROR: could not make pass1 directory: "<< twoPass.dir<<"\n";
+            errOut <<"SOLUTION: please check the path and writing permissions \n";
             exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
         };
     };
 
-    if (runMode=="alignReads" && genomeLoad!="Remove" && genomeLoad!="LoadAndExit") {//open reads files to check if they are present
+    // openReadFiles depends on twoPass for reading SAM header
+    if (runMode=="alignReads" && pGe.gLoad!="Remove" && pGe.gLoad!="LoadAndExit") {//open reads files to check if they are present
         openReadsFiles();
 
         //check sizes of the mate files, if not the same, assume mates are not the same length
         if (readNmates==1) {
             readMatesEqualLengths=true;
-        } else if (readNmates > 2){
+        } else if (readNmates > 2 && pSolo.typeStr=="None"){
             ostringstream errOut;
             errOut <<"EXITING: because of fatal input ERROR: number of read mates files > 2: " <<readNmates << "\n";
             errOut <<"SOLUTION:specify only one or two files in the --readFilesIn option. If file names contain spaces, use quotes: \"file name\"\n";
@@ -791,7 +838,6 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
             };
         };
 
-
         if (outFilterType=="Normal") {
             outFilterBySJoutStage=0;
         } else if (outFilterType=="BySJout") {
@@ -813,8 +859,7 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
 
     // in/out buffers
     #define BUFFER_InSizeFraction 0.5
-    if (limitIObufferSize<limitOutSJcollapsed*Junction::dataSize+1000000)
-    {
+    if (limitIObufferSize<limitOutSJcollapsed*Junction::dataSize+1000000) {
         ostringstream errOut;
         errOut <<"EXITING because of FATAL INPUT ERROR: --limitIObufferSize="<<limitIObufferSize <<" is too small for ";
         errOut << "--limitOutSJcollapsed*"<<Junction::dataSize<<"="<< limitOutSJcollapsed<<"*"<<Junction::dataSize<<"="<<limitOutSJcollapsed*Junction::dataSize<<"\n";
@@ -825,15 +870,20 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
     chunkOutBAMsizeBytes= (uint) int((1.0/BUFFER_InSizeFraction-1.0)*chunkInSizeBytesArray*2.0);
     chunkInSizeBytes=chunkInSizeBytesArray-2*(DEF_readSeqLengthMax+1)-2*DEF_readNameLengthMax;//to prevent overflow
 
-    //basic trimming
-    if (clip5pNbases.size()==1 && readNmates==2) clip5pNbases.push_back(clip5pNbases[0]);
-    if (clip3pNbases.size()==1 && readNmates==2) clip3pNbases.push_back(clip3pNbases[0]);
-    if (clip3pAfterAdapterNbases.size()==1 && readNmates==2) clip3pAfterAdapterNbases.push_back(clip3pAfterAdapterNbases[0]);
+    //basic trimming: same adapter for both mates
+    if (clip5pNbases.size()==1 && readNmates>=2) 
+        clip5pNbases.push_back(clip5pNbases[0]);
+    if (clip3pNbases.size()==1 && readNmates>=2) 
+        clip3pNbases.push_back(clip3pNbases[0]);
+    if (clip3pAfterAdapterNbases.size()==1 && readNmates>=2) 
+        clip3pAfterAdapterNbases.push_back(clip3pAfterAdapterNbases[0]);
 
-    //adapter clipping
-    if (clip3pAdapterSeq.size()==1 && readNmates==2) clip3pAdapterSeq.push_back(clip3pAdapterSeq[0]);
-    if (clip3pAdapterMMp.size()==1 && readNmates==2) clip3pAdapterMMp.push_back(clip3pAdapterMMp[0]);
-    for (uint imate=0;imate<readNmates;imate++) {
+    //adapter clipping: same adapter for both mates
+    if (clip3pAdapterSeq.size()==1 && readNmates>=2) 
+        clip3pAdapterSeq.push_back(clip3pAdapterSeq[0]);
+    if (clip3pAdapterMMp.size()==1 && readNmates>=2) 
+        clip3pAdapterMMp.push_back(clip3pAdapterMMp[0]);
+    for (uint imate=0;imate<min(2LLU,readNmates);imate++) {
         if (clip3pAdapterSeq.at(imate).at(0)=='-') {// no clipping
             clip3pAdapterSeq.at(imate).assign("");
         } else {//clipping
@@ -843,251 +893,88 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         };
     };
 
-    //outSAMattributes
-    outSAMattrPresent.NH=false;//TODO re-write as class with constructor?
-    outSAMattrPresent.HI=false;
-    outSAMattrPresent.AS=false;
-    outSAMattrPresent.NM=false;
-    outSAMattrPresent.MD=false;
-    outSAMattrPresent.nM=false;
-    outSAMattrPresent.jM=false;
-    outSAMattrPresent.jI=false;
-    outSAMattrPresent.RG=false;
-    outSAMattrPresent.MC=false;    
-    outSAMattrPresent.XS=false;
-    outSAMattrPresent.ch=false;
+    //variation
+    var.yes=false;
+    if (var.vcfFile!="-") {
+        var.yes=true;
+    };
 
-    //for quant SAM output only NH and HI flags
-    outSAMattrPresentQuant=outSAMattrPresent;
-    outSAMattrPresentQuant.NH=true;
-    outSAMattrPresentQuant.HI=true;
-    outSAMattrOrderQuant.push_back(ATTR_NH);
-    outSAMattrOrderQuant.push_back(ATTR_HI);
-
-    vector<string> vAttr1;
-    if (outSAMattributes.at(0)=="None") {
-    } else if (outSAMattributes.at(0)=="All"){
-        vAttr1={"NH","HI","AS","nM","NM","MD","jM","jI","MC","ch"};
-    } else if (outSAMattributes.at(0)=="Standard"){
-        vAttr1={"NH","HI","AS","nM"};
+    //WASP
+    wasp.yes=false;
+    wasp.SAMtag=false;
+    if (wasp.outputMode=="SAMtag") {
+        wasp.yes=true;
+        wasp.SAMtag=true;
+    } else if (wasp.outputMode=="None") {
+        //nothing to do
     } else {
-        vAttr1=outSAMattributes;
-    };
-
-    for (uint ii=0;ii<vAttr1.size();ii++) {
-        if        (vAttr1.at(ii)== "NH") {
-            outSAMattrOrder.push_back(ATTR_NH);
-            outSAMattrPresent.NH=true;
-        } else if (vAttr1.at(ii)== "HI") {
-            outSAMattrOrder.push_back(ATTR_HI);
-            outSAMattrPresent.HI=true;
-        } else if (vAttr1.at(ii)== "AS") {
-            outSAMattrOrder.push_back(ATTR_AS);
-            outSAMattrPresent.AS=true;
-        } else if (vAttr1.at(ii)== "NM") {
-            outSAMattrOrder.push_back(ATTR_NM);
-            outSAMattrPresent.NM=true;
-        } else if (vAttr1.at(ii)== "MD") {
-            outSAMattrOrder.push_back(ATTR_MD);
-            outSAMattrPresent.MD=true;
-        } else if (vAttr1.at(ii)== "nM") {
-            outSAMattrOrder.push_back(ATTR_nM);
-            outSAMattrPresent.nM=true;
-        } else if (vAttr1.at(ii)== "jM") {
-            outSAMattrOrder.push_back(ATTR_jM);
-            outSAMattrPresent.jM=true;
-        } else if (vAttr1.at(ii)== "jI") {
-            outSAMattrOrder.push_back(ATTR_jI);
-            outSAMattrPresent.jI=true;
-        } else if (vAttr1.at(ii)== "RG") {
-            outSAMattrOrder.push_back(ATTR_RG);
-            outSAMattrOrderQuant.push_back(ATTR_RG);
-            outSAMattrPresent.RG=true;
-        } else if (vAttr1.at(ii)== "ch") {
-            outSAMattrOrder.push_back(ATTR_ch);
-            outSAMattrOrderQuant.push_back(ATTR_ch);
-            outSAMattrPresent.ch=true;      
-        } else if (vAttr1.at(ii)== "MC") {
-            outSAMattrOrder.push_back(ATTR_MC);
-            outSAMattrOrderQuant.push_back(ATTR_MC);
-            outSAMattrPresent.MC=true;                        
-        } else if (vAttr1.at(ii)== "XS") {
-            outSAMattrOrder.push_back(ATTR_XS);
-            outSAMattrPresent.XS=true;
-            if (outSAMstrandField!="intronMotif") {
-                inOut->logMain << "WARNING --outSAMattributes contains XS, therefore STAR will use --outSAMstrandField intronMotif" <<endl;
-                outSAMstrandField="intronMotif";
-            };
-        } else {
-            ostringstream errOut;
-            errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented SAM atrribute (tag): "<<vAttr1.at(ii) <<"\n";
-            errOut <<"SOLUTION: re-run STAR with --outSAMattributes that contains only implemented attributes\n";
-            exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-        };
-    };
-
-    if (outSAMattrRG.size()>0 && !outSAMattrPresent.RG) {
-        outSAMattrOrder.push_back(ATTR_RG);
-        outSAMattrOrderQuant.push_back(ATTR_RG);
-        outSAMattrPresent.RG=true;
-        inOut->logMain << "WARNING --outSAMattrRG defines a read group, therefore STAR will output RG attribute" <<endl;
-    } else if (outSAMattrRG.size()==0 && outSAMattrPresent.RG) {
-            ostringstream errOut;
-            errOut <<"EXITING because of FATAL INPUT ERROR: --outSAMattributes contains RG tag, but --outSAMattrRGline is not set\n";
-            errOut <<"SOLUTION: re-run STAR with a valid read group parameter --outSAMattrRGline\n";
-            exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-    };
-
-    if (outSAMstrandField=="intronMotif" && !outSAMattrPresent.XS) {
-        outSAMattrOrder.push_back(ATTR_XS);
-        inOut->logMain << "WARNING --outSAMstrandField=intronMotif, therefore STAR will output XS attribute" <<endl;
-    };
-
-    //chimeric
-    if (chim.out.type.at(0)=="WithinBAM")
-    {
-        chim.out.bam=true;
-    } else if (chim.out.type.at(0)=="SeparateSAMold")
-    {
-        chim.out.bam=false;
-    } else{
         ostringstream errOut;
-        errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented value for the first word of --chimOutType: "<<chim.out.type.at(0) <<"\n";
-        errOut <<"SOLUTION: re-run STAR with --chimOutType SeparateSAMold OR WithinBAM\n";
-        exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-    };
-    
-    if (chim.out.bam && !outBAMunsorted && !outBAMcoord) {
-            ostringstream errOut;
-            errOut <<"EXITING because of fatal PARAMETERS error: --chimOutType WithinBAM requires BAM output\n";
-            errOut <<"SOLUTION: re-run with --outSAMtype BAM Unsorted/SortedByCoordinate\n";
-            exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-    };
-    
-    if (chim.out.bam && !outSAMattrPresent.NM) {
-       outSAMattrOrder.push_back(ATTR_NM);
-       inOut->logMain << "WARNING --chimOutType=WithinBAM, therefore STAR will output NM attribute" <<endl;
-    };
-    
-    
-    if (chim.out.bam)
-    {
-        chim.out.bamHardClip=true;//default
-        if (chim.out.type.size()>1)
-        {
-            if (chim.out.type.at(1)=="HardClip")
-            {
-                chim.out.bamHardClip=true;
-            } else if (chim.out.type.at(1)=="SoftClip")
-            {
-                chim.out.bamHardClip=false;
-            } else {
-                ostringstream errOut;
-                errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented value for the 2nd word of --chimOutType: "<<chim.out.type.at(1) <<"\n";
-                errOut <<"SOLUTION: re-run STAR with --chimOutType WithinBAM  HardClip OR SoftClip\n";
-                exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-            };
-        };
-    };
-    
-    chim.filter.genomicN=false;
-    for (uint ii=0; ii<chimFilter.size(); ii++)
-    {
-        if (chimFilter.at(ii)=="banGenomicN")
-        {
-            chim.filter.genomicN=true;
-        }
-        else if (chimFilter.at(ii)=="None")
-        {//nothing to do
-        }
-        else
-        {
-            ostringstream errOut;
-            errOut << "EXITING because of fatal PARAMETERS error: unrecognized value of --chimFilter="<<chimFilter.at(ii)<<"\n";
-            errOut << "SOLUTION: use allowed values: banGenomicN || None";
-            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-        };
-    };
-
-
-    alignEndsType.ext[0][0]=false;
-    alignEndsType.ext[0][1]=false;
-    alignEndsType.ext[1][0]=false;
-    alignEndsType.ext[1][1]=false;
-
-    if (alignEndsType.in=="EndToEnd")
-    {
-        alignEndsType.ext[0][0]=true;
-        alignEndsType.ext[0][1]=true;
-        alignEndsType.ext[1][0]=true;
-        alignEndsType.ext[1][1]=true;
-    } else if (alignEndsType.in=="Extend5pOfRead1" )
-    {
-        alignEndsType.ext[0][0]=true;
-    } else if (alignEndsType.in=="Extend5pOfReads12" )
-    {
-        alignEndsType.ext[0][0]=true;        
-        alignEndsType.ext[1][0]=true;  
-    } else if (alignEndsType.in=="Extend3pOfRead1" )
-    {
-        alignEndsType.ext[0][1]=true;
-    } else if (alignEndsType.in=="Local")
-    {
-        //nothing to do for now
-    } else
-    {
-        ostringstream errOut;
-        errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented value for --alignEndsType: "<<alignEndsType.in <<"\n";
-        errOut <<"SOLUTION: re-run STAR with --alignEndsType Local OR EndToEnd OR Extend5pOfRead1 OR Extend3pOfRead1\n";
+        errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented --waspOutputMode option: "<<wasp.outputMode <<"\n";
+        errOut <<"SOLUTION: re-run STAR with allowed --waspOutputMode options: None or SAMtag\n";
         exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
-//     #ifdef COMPILE_NO_SHM
-//         if (genomeLoad!="NoSharedMemory") {
-//             ostringstream errOut;
-//             errOut <<"EXITING because of FATAL INPUT ERROR: The code was compiled with NO SHARED MEMORY support, but genomeLoad="<<genomeLoad<<"\n";
-//             errOut <<"SOLUTION: run STAR with    --genomeLoad NoSharedMemory    option\n";
-//             exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-//         };
-//     #endif
-
-    //open compilation-dependent streams
-    #ifdef OUTPUT_localChains
-            inOut->outLocalChains.open((outFileNamePrefix + "LocalChains.out.tab").c_str());
-    #endif
-
-//     genomeNumToNT={'A','C','G','T','N'};
-    strcpy(genomeNumToNT,"ACGTN");
-
-    if (genomeLoad!="LoadAndKeep" && genomeLoad!="LoadAndRemove" && genomeLoad!="Remove" && genomeLoad!="LoadAndExit" && genomeLoad!="NoSharedMemory") {// find shared memory fragment
+    if (wasp.yes && !var.yes) {
         ostringstream errOut;
-        errOut << "EXITING because of FATAL INPUT ERROR: --genomeLoad=" << genomeLoad << "\n" <<flush;
-        errOut << "SOLUTION: use one of the allowed values of --genomeLoad : NoSharedMemory,LoadAndKeep,LoadAndRemove,LoadAndExit,Remove.\n" <<flush;
-        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+        errOut <<"EXITING because of FATAL INPUT ERROR: --waspOutputMode option requires VCF file: "<<wasp.outputMode <<"\n";
+        errOut <<"SOLUTION: re-run STAR with --waspOutputMode ... and --varVCFfile /path/to/file.vcf\n";
+        exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
+     if (wasp.yes && outSAMtype.at(0)!="BAM") {
+        ostringstream errOut;
+        errOut <<"EXITING because of FATAL INPUT ERROR: --waspOutputMode requires output to BAM file\n";
+        errOut <<"SOLUTION: re-run STAR with --waspOutputMode ... and --outSAMtype BAM ... \n";
+        exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+    };
+
+    
+    //genome transformation
+    if (pGe.transform.typeString=="None") {
+        pGe.transform.type=0;
+    } else if (pGe.transform.typeString=="Haploid") {
+        pGe.transform.type=1;
+    } else if (pGe.transform.typeString=="Diploid") {
+        pGe.transform.type=2;
+    } else {
+        ostringstream errOut;
+        errOut << "EXITING because of FATAL INPUT ERROR: unrecognized option in --outTransformType=" << pGe.transform.typeString << "\n";
+        errOut << "SOLUTION: use one of the allowed values of --outWigType : 'None' or 'Haploid' or 'Diploid' \n";
+        exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+    };        
+    
     //quantification parameters
     quant.yes=false;
+    quant.geneFull.yes=false;
+    quant.gene.yes=false;
     quant.geCount.yes=false;
     quant.trSAM.yes=false;
+    quant.trSAM.bamYes=false;
+    quant.trSAM.indel=false;
+    quant.trSAM.softClip=false;
+    quant.trSAM.singleEnd=false; 
     if (quant.mode.at(0) != "-") {
         quant.yes=true;
         for (uint32 ii=0; ii<quant.mode.size(); ii++) {
             if (quant.mode.at(ii)=="TranscriptomeSAM") {
                 quant.trSAM.yes=true;
-                if (outStd=="BAM_Quant") {
-                    outFileNamePrefix="-";
-                } else {
-                    outQuantBAMfileName=outFileNamePrefix + "Aligned.toTranscriptome.out.bam";
+
+                if (quant.trSAM.bamCompression>-2)
+                    quant.trSAM.bamYes=true;
+
+                if (quant.trSAM.bamYes) {
+                    if (outStd=="BAM_Quant") {
+                        outFileNamePrefix="-";
+                    } else {
+                        outQuantBAMfileName=outFileNamePrefix + "Aligned.toTranscriptome.out.bam";
+                    };
+                    inOut->outQuantBAMfile=bgzf_open(outQuantBAMfileName.c_str(),("w"+to_string((long long) quant.trSAM.bamCompression)).c_str());
                 };
-                inOut->outQuantBAMfile=bgzf_open(outQuantBAMfileName.c_str(),("w"+to_string((long long) quant.trSAM.bamCompression)).c_str());
-                if (quant.trSAM.ban=="IndelSoftclipSingleend")
-                {
+                if (quant.trSAM.ban=="IndelSoftclipSingleend") {
                     quant.trSAM.indel=false;
                     quant.trSAM.softClip=false;
                     quant.trSAM.singleEnd=false;
-                } else if (quant.trSAM.ban=="Singleend")
-                {
+                } else if (quant.trSAM.ban=="Singleend") {
                     quant.trSAM.indel=true;
                     quant.trSAM.softClip=true;
                     quant.trSAM.singleEnd=false;
@@ -1097,85 +984,93 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
                 quant.geCount.outFile=outFileNamePrefix + "ReadsPerGene.out.tab";
             } else {
                 ostringstream errOut;
-                errOut << "EXITING because of fatal INPUT error: unrecognized option in --quant.mode=" << quant.mode.at(ii) << "\n";
-                errOut << "SOLUTION: use one of the allowed values of --quant.mode : TranscriptomeSAM or - .\n";
+                errOut << "EXITING because of fatal INPUT error: unrecognized option in --quantMode=" << quant.mode.at(ii) << "\n";
+                errOut << "SOLUTION: use one of the allowed values of --quantMode : TranscriptomeSAM or GeneCounts or - .\n";
                 exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
             };
         };
     };
 
-
-    //two-pass
-    if (parArray.at(twoPass.pass1readsN_par)->inputLevel>0  && twoPass.mode=="None")
-    {
+    outSAMstrandField.type=0; //none
+    if (outSAMstrandField.in=="None") {
+        outSAMstrandField.type=0;
+    } else if (outSAMstrandField.in=="intronMotif") {
+        outSAMstrandField.type=1;
+    } else {
         ostringstream errOut;
-        errOut << "EXITING because of fatal PARAMETERS error: --twopass1readsN is defined, but --twoPassMode is not defined\n";
-        errOut << "SOLUTION: to activate the 2-pass mode, use --twopassMode Basic";
+        errOut << "EXITING because of fatal INPUT error: unrecognized option in outSAMstrandField=" << outSAMstrandField.in << "\n";
+        errOut << "SOLUTION: use one of the allowed values of --outSAMstrandField : None or intronMotif \n";
+        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+    };
+    
+    //SAM attributes
+    samAttributes();
+    
+    //solo
+    pSolo.initialize(this);
+
+    //alignEnds
+    alignEndsType.ext[0][0]=false;
+    alignEndsType.ext[0][1]=false;
+    alignEndsType.ext[1][0]=false;
+    alignEndsType.ext[1][1]=false;
+
+    if (alignEndsType.in=="EndToEnd") {
+        alignEndsType.ext[0][0]=true;
+        alignEndsType.ext[0][1]=true;
+        alignEndsType.ext[1][0]=true;
+        alignEndsType.ext[1][1]=true;
+    } else if (alignEndsType.in=="Extend5pOfRead1" ) {
+        alignEndsType.ext[0][0]=true;
+    } else if (alignEndsType.in=="Extend5pOfReads12" ) {
+        alignEndsType.ext[0][0]=true;
+        alignEndsType.ext[1][0]=true;
+    } else if (alignEndsType.in=="Extend3pOfRead1" ) {
+        alignEndsType.ext[0][1]=true;
+    } else if (alignEndsType.in=="Local") {
+        //nothing to do for now
+    } else {
+        ostringstream errOut;
+        errOut <<"EXITING because of FATAL INPUT ERROR: unknown/unimplemented value for --alignEndsType: "<<alignEndsType.in <<"\n";
+        errOut <<"SOLUTION: re-run STAR with --alignEndsType Local OR EndToEnd OR Extend5pOfRead1 OR Extend3pOfRead1\n";
+        exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+    };
+
+    //open compilation-dependent streams
+    #ifdef OUTPUT_localChains
+            inOut->outLocalChains.open((outFileNamePrefix + "LocalChains.out.tab").c_str());
+    #endif
+
+    strcpy(genomeNumToNT,"ACGTN");
+    
+    if (pGe.gTypeString!="Full" && pGe.gTypeString!="Transcriptome" && pGe.gTypeString!="SuperTranscriptome") {
+        ostringstream errOut;
+        errOut << "EXITING because of FATAL parameter error: --genomeType=" << pGe.gTypeString << "\n";
+        errOut << "SOLUTION: use one of the allowed values of --genomeLoad : Full OR Transcriptome OR SuperTranscriptome\n" <<flush;
         exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
-
-
-    twoPass.yes=false;
-    if (twoPass.mode!="None") {//2-pass parameters
-        if (runMode!="alignReads")
-        {
-            ostringstream errOut;
-            errOut << "EXITING because of fatal PARAMETERS error: 2-pass mapping option  can only be used with --runMode alignReads\n";
-            errOut << "SOLUTION: remove --twopassMode option";
-            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-        };
-
-        if (twoPass.mode!="Basic")
-        {
-            ostringstream errOut;
-            errOut << "EXITING because of fatal PARAMETERS error: unrecognized value of --twopassMode="<<twoPass.mode<<"\n";
-            errOut << "SOLUTION: for the 2-pass mode, use allowed values --twopassMode: Basic";
-            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-        };
-
-        if (twoPass.pass1readsN==0)
-        {
-            ostringstream errOut;
-            errOut << "EXITING because of fatal PARAMETERS error: --twopass1readsN = 0 in the 2-pass mode\n";
-            errOut << "SOLUTION: for the 2-pass mode, specify --twopass1readsN > 0. Use a very large number or -1 to map all reads in the 1st pass.\n";
-            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-        };
-
-        if (genomeLoad!="NoSharedMemory") {
-            ostringstream errOut;
-            errOut << "EXITING because of fatal PARAMETERS error: 2-pass method is not compatible with genomeLoad<<"<<genomeLoad<<"\n";
-            errOut << "SOLUTION: re-run STAR with --genomeLoad NoSharedMemory ; this is the only compatible option at the moment.s\n";
-            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-        };
-        twoPass.yes=true;
-        twoPass.dir=outFileNamePrefix+"_STARpass1/";
-        sysRemoveDir (twoPass.dir);
-        if (mkdir (twoPass.dir.c_str(),runDirPerm)!=0) {
-            ostringstream errOut;
-            errOut <<"EXITING because of fatal ERROR: could not make pass1 directory: "<< twoPass.dir<<"\n";
-            errOut <<"SOLUTION: please check the path and writing permissions \n";
-            exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-        };
+    if (pGe.gLoad!="LoadAndKeep" && pGe.gLoad!="LoadAndRemove" && pGe.gLoad!="Remove" && pGe.gLoad!="LoadAndExit" && pGe.gLoad!="NoSharedMemory") {// find shared memory fragment
+        ostringstream errOut;
+        errOut << "EXITING because of FATAL INPUT ERROR: --genomeLoad=" << pGe.gLoad << "\n" <<flush;
+        errOut << "SOLUTION: use one of the allowed values of --genomeLoad : NoSharedMemory,LoadAndKeep,LoadAndRemove,LoadAndExit,Remove.\n" <<flush;
+        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
    //sjdb insert on the fly
-
     sjdbInsert.pass1=false;
     sjdbInsert.pass2=false;
     sjdbInsert.yes=false;
-    if (sjdbFileChrStartEnd.at(0)!="-" || sjdbGTFfile!="-")
-    {//will insert annotated sjdb on the fly
+    if (pGe.sjdbFileChrStartEnd.at(0)!="-" || pGe.sjdbGTFfile!="-") {//will insert annotated sjdb on the fly
        sjdbInsert.pass1=true;
        sjdbInsert.yes=true;
     };
-    if (twoPass.yes)
-    {
+    if (twoPass.yes) {
        sjdbInsert.pass2=true;
        sjdbInsert.yes=true;
     };
 
-    if (genomeLoad!="NoSharedMemory" && sjdbInsert.yes )
+    if (pGe.gLoad!="NoSharedMemory" && sjdbInsert.yes )
     {
         ostringstream errOut;
         errOut << "EXITING because of fatal PARAMETERS error: on the fly junction insertion and 2-pass mappng cannot be used with shared memory genome \n" ;
@@ -1185,10 +1080,10 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
 
     if (runMode=="alignReads" && sjdbInsert.yes )
     {//run-time genome directory, this is needed for genome files generated on the fly
-        if (sjdbOverhang<=0) {
+        if (pGe.sjdbOverhang<=0) {
             ostringstream errOut;
-            errOut << "EXITING because of fatal PARAMETERS error: sjdbOverhang <=0 while junctions are inserted on the fly with --sjdbFileChrStartEnd or/and --sjdbGTFfile\n";
-            errOut << "SOLUTION: specify sjdbOverhang>0, ideally readmateLength-1";
+            errOut << "EXITING because of fatal PARAMETERS error: pGe.sjdbOverhang <=0 while junctions are inserted on the fly with --sjdbFileChrStartEnd or/and --sjdbGTFfile\n";
+            errOut << "SOLUTION: specify pGe.sjdbOverhang>0, ideally readmateLength-1";
             exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
         };
         sjdbInsert.outDir=outFileNamePrefix+"_STARgenome/";
@@ -1201,35 +1096,24 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         };
     };
 
-    //final sjdbOverhang value has been determined
-    sjdbLength = sjdbOverhang==0 ? 0 : sjdbOverhang*2+1;
-
     if (outBAMcoord && limitBAMsortRAM==0) {//check limitBAMsortRAM
-        if (genomeLoad!="NoSharedMemory") {
+        if (pGe.gLoad!="NoSharedMemory") {
             ostringstream errOut;
-            errOut <<"EXITING because of fatal PARAMETERS error: limitBAMsortRAM=0 (default) cannot be used with --genomeLoad="<<genomeLoad <<", or any other shared memory options\n";
+            errOut <<"EXITING because of fatal PARAMETERS error: limitBAMsortRAM=0 (default) cannot be used with --genomeLoad="<<pGe.gLoad <<", or any other shared memory options\n";
             errOut <<"SOLUTION: please use default --genomeLoad NoSharedMemory, \n        OR specify --limitBAMsortRAM the amount of RAM (bytes) that can be allocated for BAM sorting in addition to shared memory allocated for the genome.\n        --limitBAMsortRAM typically has to be > 10000000000 (i.e 10GB).\n";
             exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
         };
         inOut->logMain<<"WARNING: --limitBAMsortRAM=0, will use genome size as RAM limit for BAM sorting\n";
     };
 
-    for (uint ii=0; ii<readNameSeparator.size(); ii++)
-    {
-        if (readNameSeparator.at(ii)=="space")
-        {
+    for (uint ii=0; ii<readNameSeparator.size(); ii++) {
+        if (readNameSeparator.at(ii)=="space") {
             readNameSeparatorChar.push_back(' ');
-        }
-        else if (readNameSeparator.at(ii)=="none")
-        {
+        } else if (readNameSeparator.at(ii)=="none") {
             //nothing to do
-        }
-        else if (readNameSeparator.at(ii).size()==1)
-        {
+        } else if (readNameSeparator.at(ii).size()==1) {
             readNameSeparatorChar.push_back(readNameSeparator.at(ii).at(0));
-        }
-        else
-        {
+        } else{
             ostringstream errOut;
             errOut << "EXITING because of fatal PARAMETERS error: unrecognized value of --readNameSeparator="<<readNameSeparator.at(ii)<<"\n";
             errOut << "SOLUTION: use allowed values: space OR single characters";
@@ -1237,65 +1121,81 @@ void Parameters::inputParameters (int argInN, char* argIn[]) {//input parameters
         };
     };
 
-
-    //genome parameters
-    genomeChrBinNbases=1LLU<<genomeChrBinNbits;
-
     //outSAMunmapped
     outSAMunmapped.yes=false;
     outSAMunmapped.within=false;
     outSAMunmapped.keepPairs=false;
-    if (outSAMunmapped.mode.at(0)=="None")
-    {//nothing to do
-    } else if (outSAMunmapped.mode.at(0)=="Within")
-    {
+    if (outSAMunmapped.mode.at(0)=="None" && outSAMunmapped.mode.size()==1) {
+        //nothing to do, all false
+    } else if (outSAMunmapped.mode.at(0)=="Within" && outSAMunmapped.mode.size()==1) {
         outSAMunmapped.yes=true;
         outSAMunmapped.within=true;
-    } else
-    {
+    } else if (outSAMunmapped.mode.at(0)=="Within" && outSAMunmapped.mode.at(1)=="KeepPairs") {
+        outSAMunmapped.yes=true;
+        outSAMunmapped.within=true;
+        if (readNmates==2)
+            outSAMunmapped.keepPairs=true;
+    } else {
         ostringstream errOut;
-        errOut << "EXITING because of fatal PARAMETERS error: unrecognized first word of --outSAMunmapped="<<outSAMunmapped.mode.at(0)<<"\n";
-        errOut << "SOLUTION: use allowed options: None OR Within";
+        errOut << "EXITING because of fatal PARAMETERS error: unrecognized option for --outSAMunmapped=";
+        for (uint ii=0; ii<outSAMunmapped.mode.size(); ii++) errOut <<" "<< outSAMunmapped.mode.at(ii);
+        errOut << "\nSOLUTION: use allowed options: None OR Within OR Within KeepPairs";
         exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     };
 
-    for (uint ii=1;ii<outSAMunmapped.mode.size();ii++)
-    {
-        if (outSAMunmapped.mode.at(0)=="Within")
-        {
-            outSAMunmapped.keepPairs=true;
-        } else
-        {
-            ostringstream errOut;
-            errOut << "EXITING because of fatal PARAMETERS error: unrecognized option in of --outSAMunmapped="<<outSAMunmapped.mode.at(ii)<<"\n";
-            errOut << "SOLUTION: use allowed option: KeepPairs";
-            exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
-        };
-    };
-
     alignEndsProtrude.nBasesMax=stoi(alignEndsProtrude.in.at(0),nullptr);
-    if (alignEndsProtrude.nBasesMax>0)
-    {//allow ends protrusion
-        if (alignEndsProtrude.in.at(1)=="ConcordantPair")
-        {
+    alignEndsProtrude.concordantPair=false;
+    if (alignEndsProtrude.nBasesMax>0) {//allow ends protrusion
+        if (alignEndsProtrude.in.at(1)=="ConcordantPair") {
             alignEndsProtrude.concordantPair=true;
-        } else if (alignEndsProtrude.in.at(1)=="DiscordantPair")
-        {
+        } else if (alignEndsProtrude.in.at(1)=="DiscordantPair") {
             alignEndsProtrude.concordantPair=false;
-        } else
-        {
+        } else  {
             ostringstream errOut;
             errOut << "EXITING because of fatal PARAMETERS error: unrecognized option in of --alignEndsProtrude="<<alignEndsProtrude.in.at(1)<<"\n";
             errOut << "SOLUTION: use allowed option: ConcordantPair or DiscordantPair";
             exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
         };
     };
-    
+
+    if (alignInsertionFlush.in=="None") {
+        alignInsertionFlush.flushRight=false;
+    } else if (alignInsertionFlush.in=="Right") {
+        alignInsertionFlush.flushRight=true;
+    } else  {
+        ostringstream errOut;
+        errOut << "EXITING because of fatal PARAMETERS error: unrecognized option in of --alignInsertionFlush="<<alignInsertionFlush.in<<"\n";
+        errOut << "SOLUTION: use allowed option: None or Right";
+        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+    };
+
+    //peOverlap
+    if (peOverlap.NbasesMin>0) {
+        peOverlap.yes=true;
+    } else {
+        peOverlap.yes=false;
+    };
+
+    //alignSoftClipAtReferenceEnds.in
+    if (alignSoftClipAtReferenceEnds.in=="Yes") {
+        alignSoftClipAtReferenceEnds.yes=true;
+    } else if (alignSoftClipAtReferenceEnds.in=="No") {
+        alignSoftClipAtReferenceEnds.yes=false;
+    } else {
+        ostringstream errOut;
+        errOut << "EXITING because of fatal PARAMETERS error: unrecognized option in of --alignSoftClipAtReferenceEnds="<<alignSoftClipAtReferenceEnds.in<<"\n";
+        errOut << "SOLUTION: use allowed option: Yes or No";
+        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
+    };
+
+    outSAMreadIDnumber=false;
+    if (outSAMreadID=="Number") {
+        outSAMreadIDnumber=true;
+    };
+
     ////////////////////////////////////////////////
     inOut->logMain << "Finished loading and checking parameters\n" <<flush;
 };
-
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Parameters::scanAllLines (istream &streamIn, int inputLevel,  int inputLevelRequested) {//scan
@@ -1342,7 +1242,7 @@ int Parameters::scanOneLine (string &lineIn, int inputLevel, int inputLevelReque
 
     if (iPar==parArray.size()) {//string is not identified
         ostringstream errOut;
-        errOut << "EXITING: FATAL INPUT ERROR: unrecoginzed parameter name \""<< parIn << "\" in input \"" << parameterInputName.at(inputLevel) <<"\"\n";
+        errOut << "EXITING: FATAL INPUT ERROR: unrecognized parameter name \""<< parIn << "\" in input \"" << parameterInputName.at(inputLevel) <<"\"\n";
         errOut << "SOLUTION: use correct parameter name (check the manual)\n"<<flush;
         exitWithError(errOut.str(), std::cerr, inOut->logMain, EXIT_CODE_PARAMETER, *this);
     } else {//found the corresponding parameter
@@ -1371,76 +1271,3 @@ int Parameters::scanOneLine (string &lineIn, int inputLevel, int inputLevelReque
     };
     return 0;
 };
-
-//////////////////////////////////////////////////////////////////////////////////////////
-void Parameters::chrInfoLoad() {//find chrStart,Length,nChr from Genome G
-
-    //load chr names
-    ifstream chrStreamIn ( (genomeDir+"/chrName.txt").c_str() );
-    if (chrStreamIn.fail()) {
-        ostringstream errOut;
-        errOut << "EXITING because of FATAL error, could not open file " << (genomeDir+"/chrName.txt") <<"\n";
-        errOut << "SOLUTION: re-generate genome files with STAR --runMode genomeGenerate\n";
-        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_INPUT_FILES, *this);
-    };
-
-    char chrInChar[1000];
-
-    while (chrStreamIn.good()) {
-        string chrIn;
-        chrStreamIn.getline(chrInChar,1000);
-        chrIn=chrInChar;
-        if (chrIn=="") break;
-        chrName.push_back(chrIn);
-    };
-    chrStreamIn.close();
-    nChrReal=chrName.size();
-
-    inOut->logMain << "Number of real (reference) chromosomes= " << nChrReal <<"\n"<<flush;
-    chrStart.resize(nChrReal+1);
-    chrLength.resize(nChrReal);
-
-    //load chr lengths
-    chrStreamIn.open( (genomeDir+"/chrLength.txt").c_str() );
-    if (chrStreamIn.fail()) {
-        ostringstream errOut;
-        errOut << "EXITING because of FATAL error, could not open file " << (genomeDir+"/chrLength.txt") <<"\n";
-        errOut << "SOLUTION: re-generate genome files with STAR --runMode genomeGenerate\n";
-        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_INPUT_FILES, *this);
-    };
-
-    for  (uint ii=0;ii<nChrReal;ii++) {
-        chrStreamIn >> chrLength[ii];
-    };
-    chrStreamIn.close();
-
-    //load chr starts
-    chrStreamIn.open( (genomeDir+"/chrStart.txt").c_str() );
-    if (chrStreamIn.fail()) {
-        ostringstream errOut;
-        errOut << "EXITING because of FATAL error, could not open file " << (genomeDir+"/chrStart.txt") <<"\n";
-        errOut << "SOLUTION: re-generate genome files with STAR --runMode genomeGenerate\n";
-        exitWithError(errOut.str(),std::cerr, inOut->logMain, EXIT_CODE_INPUT_FILES, *this);
-    };
-
-    for  (uint ii=0;ii<=nChrReal;ii++) {
-        chrStreamIn >> chrStart[ii];
-    };
-    chrStreamIn.close();
-
-    //log
-    for (uint ii=0; ii<nChrReal;ii++) {
-        inOut->logMain << ii+1 <<"\t"<< chrName[ii] <<"\t"<<chrLength[ii]<<"\t"<<chrStart[ii]<<"\n"<<flush;
-    };
-};
-
-//////////////////////////////////////////////////////////
-void Parameters::chrBinFill() {
-    chrBinN = chrStart[nChrReal]/genomeChrBinNbases+1;
-    chrBin = new uint [chrBinN];
-    for (uint ii=0, ichr=1; ii<chrBinN; ++ii) {
-        if (ii*genomeChrBinNbases>=chrStart[ichr]) ichr++;
-        chrBin[ii]=ichr-1;
-    };
-};
-

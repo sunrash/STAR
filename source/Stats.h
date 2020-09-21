@@ -23,8 +23,11 @@ class Stats {
 
         uint chimericAll;
 
-        time_t timeStart, timeStartMap, timeLastReport, timeFinish;
+        time_t timeStart, timeStartMap, timeFinishMap, timeLastReport, timeFinish;
 
+        //quality
+        array<array<uint64,256>,2> qualHist;
+        
         Stats ();
         void resetN();
         void printShort(ostream*);
@@ -33,5 +36,9 @@ class Stats {
         void progressReportHeader(ofstream &progressStream);
         void progressReport(ofstream &progressStream) ;
         void reportFinal(ofstream &streamOut);
+        void writeLines(ofstream &streamOut, const vector<int> outType, const string commStr, const string outStr);// write commented lines to text files with stats
+        
+        void qualHistCalc(const uint64 imate, const char* qual, const uint64 len);
+        //void qualHistCalcSolo(const uint64 imate, const char* qual, const vector<uint32> stlen);
 };
 #endif

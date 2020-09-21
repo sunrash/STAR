@@ -1,8 +1,6 @@
 ### versions
-versionSTAR             020201
-    int>0: STAR release numeric ID. Please do not change this value!
-versionGenome           020101 020200
-    int>0: oldest value of the Genome version compatible with this STAR release. Please do not change this value!
+versionGenome           2.7.4a
+    string: earliest genome index version compatible with this STAR release. Please do not change this value!
 
 ### Parameter Files
 parametersFiles          -
@@ -10,13 +8,13 @@ parametersFiles          -
 
 ### System
 sysShell            -
-    string: path to the shell binary, preferrably bash, e.g. /bin/bash.
+    string: path to the shell binary, preferably bash, e.g. /bin/bash.
                     - ... the default shell is executed, typically /bin/sh. This was reported to fail on some Ubuntu systems - then you need to specify path to bash.
 
 ### Run Parameters
-
 runMode                         alignReads
-    string: type of the run:
+    string: type of the run.
+
                                 alignReads             ... map reads
                                 genomeGenerate         ... generate genome files
                                 inputAlignmentsFromBAM ... input alignments from BAM. Presently only works with --outWigType and --bamRemoveDuplicates.
@@ -35,7 +33,6 @@ runRNGseed                      777
 
 
 ### Genome Parameters
-
 genomeDir                   ./GenomeDir/
     string: path to the directory where genome files are stored (for --runMode alignReads) or will be generated (for --runMode generateGenome)
 
@@ -73,6 +70,22 @@ genomeSAsparseD             1
 genomeSuffixLengthMax       -1
     int: maximum length of the suffixes, has to be longer than read length. -1 = infinite.
 
+#####UnderDevelopment_begin : not supported - do not use
+genomeType                  Full
+    string: type of genome to generate
+                            Full                ... full (normal) genome
+                            Transcriptome       ... genome consists of transcript sequences
+                            SuperTransriptome   ... genome consists of superTranscript sequences
+
+genomeTransformType         None
+    string: type of genome transformation
+                            None       ... no transformation
+                            Haploid    ... replace reference alleles with alternative alleles from VCF file (e.g. consensus allele)
+                            Diploid    ... create two haplotypes for each chromosome listed in VCF file, for genotypes 1|2, assumes perfect phasing (e.g. personal genome)
+
+genomeTransformVCF          -
+    string: path to VCF file for genome transformation
+#####UnderDevelopment_end
 
 ### Splice Junctions Database
 sjdbFileChrStartEnd                     -
@@ -88,28 +101,37 @@ sjdbGTFfeatureExon                      exon
     string: feature type in GTF file to be used as exons for building transcripts
 
 sjdbGTFtagExonParentTranscript          transcript_id
-    string: tag name to be used as exons' transcript-parents (default "transcript_id" works for GTF files)
+    string: GTF attribute name for parent transcript ID (default "transcript_id" works for GTF files)
 
 sjdbGTFtagExonParentGene                gene_id
-    string: tag name to be used as exons' gene-parents (default "gene_id" works for GTF files)
+    string: GTF attribute name for parent gene ID (default "gene_id" works for GTF files)
+
+sjdbGTFtagExonParentGeneName            gene_name
+    string(s): GTF attrbute name for parent gene name
+
+sjdbGTFtagExonParentGeneType            gene_type gene_biotype
+    string(s): GTF attrbute name for parent gene type
 
 sjdbOverhang                            100
     int>0: length of the donor/acceptor sequence on each side of the junctions, ideally = (mate_length - 1)
 
 sjdbScore                               2
-    int: extra alignment score for alignmets that cross database junctions
+    int: extra alignment score for alignments that cross database junctions
 
 sjdbInsertSave                          Basic
     string: which files to save when sjdb junctions are inserted on the fly at the mapping step
 					Basic ... only small junction / transcript files
 					All   ... all files including big Genome, SA and SAindex - this will create a complete genome directory
 
+### Variation parameters
+varVCFfile                              -
+    string: path to the VCF file that contains variation data. The 10th column should contain the genotype information, e.g. 0/1
+
 ### Input Files
 inputBAMfile                -
     string: path to BAM input file, to be used with --runMode inputAlignmentsFromBAM
 
 ### Read Parameters
-
 readFilesType               Fastx
     string: format of input read files
                             Fastx       ... FASTA or FASTQ
@@ -119,8 +141,17 @@ readFilesType               Fastx
 readFilesIn                 Read1 Read2
     string(s): paths to files that contain input read1 (and, if needed,  read2)
 
+readFilesManifest           -
+    string: path to the "manifest" file with the names of read files. The manifest file should contain 3 tab-separated columns:
+            paired-end reads: read1_file_name $tab$ read2_file_name $tab$ read_group_line.
+            single-end reads: read1_file_name $tab$ -               $tab$ read_group_line.
+            Spaces, but not tabs are allowed in file names.
+            If read_group_line does not start with ID:, it can only contain one ID field, and ID: will be added to it.
+            If read_group_line starts with ID:, it can contain several fields separated by $tab$, and all fields will be be copied verbatim into SAM @RG header line.
+                            -
+
 readFilesPrefix             -
-    string: preifx for the read files names, i.e. it will be added in front of the strings in --readFilesIn
+    string: prefix for the read files names, i.e. it will be added in front of the strings in --readFilesIn
                             -: no prefix
 
 readFilesCommand             -
@@ -137,6 +168,9 @@ readMatesLengthsIn          NotEqual
 readNameSeparator           /
     string(s): character(s) separating the part of the read names that will be trimmed in output (read name after space is always trimmed)
 
+readQualityScoreBase        33
+    int>=0: number to be subtracted from the ASCII code to get Phred quality score
+
 clip3pNbases                 0
     int(s): number(s) of bases to clip from 3p of each mate. If one value is given, it will be assumed the same for both mates.
 
@@ -147,14 +181,13 @@ clip3pAdapterSeq            -
     string(s): adapter sequences to clip from 3p of each mate.  If one value is given, it will be assumed the same for both mates.
 
 clip3pAdapterMMp            0.1
-    double(s): max proportion of mismatches for 3p adpater clipping for each mate.  If one value is given, it will be assumed the same for both mates.
+    double(s): max proportion of mismatches for 3p adapter clipping for each mate.  If one value is given, it will be assumed the same for both mates.
 
 clip3pAfterAdapterNbases    0
     int(s): number of bases to clip from 3p of each mate after the adapter clipping. If one value is given, it will be assumed the same for both mates.
 
 
 ### Limits
-
 limitGenomeGenerateRAM               31000000000
     int>0: maximum available RAM (bytes) for genome generation
 
@@ -176,6 +209,8 @@ limitBAMsortRAM                         0
 limitSjdbInsertNsj                     1000000
     int>=0: maximum number of junction to be inserted to the genome on the fly at the mapping stage, including those from annotations and those detected in the 1st step of the 2-pass run
 
+limitNreadsSoft                        -1
+    int: soft limit on the number of reads
 
 ### Output: general
 outFileNamePrefix               ./
@@ -228,17 +263,44 @@ outSAMmode                      Full
                                 Full ... full SAM output
                                 NoQS ... full SAM but without quality scores
 
-outSAMstrandField                               None
+outSAMstrandField               None
     string: Cufflinks-like strand field flag
                                 None        ... not used
-                                intronMotif ... strand derived from the intron motif. Reads with inconsistent and/or non-canonical introns are filtered out.
+                                intronMotif ... strand derived from the intron motif. This option changes the output alignments: reads with inconsistent and/or non-canonical introns are filtered out.
 
 outSAMattributes                Standard
-    string: a string of desired SAM attributes, in the order desired for the output SAM
-                                NH HI AS nM NM MD jM jI XS ch ... any combination in any order
-                                Standard   ... NH HI AS nM
-                                All        ... NH HI AS nM NM MD jM jI ch
-                                None       ... no attributes
+    string: a string of desired SAM attributes, in the order desired for the output SAM. Tags can be listed in any combination/order.
+                                ***Presets:
+                                None        ... no attributes
+                                Standard    ... NH HI AS nM
+                                All         ... NH HI AS nM NM MD jM jI MC ch                                                                    
+                                ***Alignment:
+                                NH          ... number of loci the reads maps to: =1 for unique mappers, >1 for multimappers. Standard SAM tag.
+                                HI          ... multiple alignment index, starts with --outSAMattrIHstart (=1 by default). Standard SAM tag.
+                                AS          ... local alignment score, +1/-1 for matches/mismateches, score* penalties for indels and gaps. For PE reads, total score for two mates. Stadnard SAM tag.
+                                nM          ... number of mismatches. For PE reads, sum over two mates.
+                                NM          ... edit distance to the reference (number of mismatched + inserted + deleted bases) for each mate. Standard SAM tag.
+                                MD          ... string encoding mismatched and deleted reference bases (see standard SAM specifications). Standard SAM tag.
+                                jM          ... intron motifs for all junctions (i.e. N in CIGAR): 0: non-canonical; 1: GT/AG, 2: CT/AC, 3: GC/AG, 4: CT/GC, 5: AT/AC, 6: GT/AT. If splice junctions database is used, and a junction is annotated, 20 is added to its motif value.
+                                jI          ... start and end of introns for all junctions (1-based).
+                                XS          ... alignment strand according to --outSAMstrandField.
+                                MC          ... mate's CIGAR string. Standard SAM tag.
+                                ch          ... marks all segment of all chimeric alingments for --chimOutType WithinBAM output.
+                                ***Variation:
+                                vA          ... variant allele
+                                vG          ... genomic coordinate of the variant overlapped by the read.
+                                vW          ... 1 - alignment passes WASP filtering; 2,3,4,5,6,7 - alignment does not pass WASP filtering. Requires --waspOutputMode SAMtag.
+                                ***STARsolo:
+                                CR CY UR UY ... sequences and quality scores of cell barcodes and UMIs for the solo* demultiplexing.
+                                GX GN       ... gene ID and gene name.                                
+                                CB UB       ... error-corrected cell barcodes and UMIs for solo* demultiplexing. Requires --outSAMtype BAM SortedByCoordinate.
+                                sM          ... assessment of CB and UMI.
+                                sS          ... sequence of the entire barcode (CB,UMI,adapter).
+                                sQ          ... quality of the entire barcode.
+                                ***Unsupported/undocumented:
+                                ha          ... haplotype (1/2) when mapping to the diploid genome. Requires genome generated with --genomeTransformType Diploid .                               
+                                rB          ... alignment block read/genomic coordinates.
+                                vR          ... read coordinate of the variant.
 
 outSAMattrIHstart               1
     int>=0:                     start value for the IH attribute. 0 may be required by some downstream software, such as Cufflinks or StringTie.
@@ -297,8 +359,13 @@ outSAMfilter            None
 
 
 outSAMmultNmax          -1
-    int: max number of multiple alignments for a read that will be output to the SAM/BAM files.
+    int: max number of multiple alignments for a read that will be output to the SAM/BAM files. Note that if this value is not equal to -1, the top scoring alignment will be output first
                         -1 ... all alignments (up to --outFilterMultimapNmax) will be output
+
+outSAMtlen              1
+    int: calculation method for the TLEN field in the SAM/BAM files
+                        1 ... leftmost base of the (+)strand mate to rightmost base of the (-)mate. (+)sign for the (+)strand mate
+                        2 ... leftmost base of any mate to rightmost base of any mate. (+)sign for the mate with the leftmost base. This is different from 1 for overlapping mates with protruding ends
 
 outBAMcompression       1
     int: -1 to 10  BAM compression level, -1=default compression (6?), 0=no compression, 10=maximum compression
@@ -306,10 +373,12 @@ outBAMcompression       1
 outBAMsortingThreadN    0
     int: >=0: number of threads for BAM sorting. 0 will default to min(6,--runThreadN).
 
-### BAM processing
+outBAMsortingBinsN      50
+    int: >0:  number of genome bins fo coordinate-sorting
 
+### BAM processing
 bamRemoveDuplicatesType  -
-    string: mark duplicates in the BAM file, for now only works with (i) sorted BAM feeded with inputBAMfile, and (ii) for paired-end alignments only
+    string: mark duplicates in the BAM file, for now only works with (i) sorted BAM fed with inputBAMfile, and (ii) for paired-end alignments only
                         -                       ... no duplicate removal/marking
                         UniqueIdentical         ... mark all multimappers, and duplicate unique mappers. The coordinates, FLAG, CIGAR must be identical
                         UniqueIdenticalNotMulti  ... mark duplicate unique mappers but not multimappers.
@@ -358,23 +427,23 @@ outFilterMismatchNmax           10
     int: alignment will be output only if it has no more mismatches than this value.
 
 outFilterMismatchNoverLmax      0.3
-    float: alignment will be output only if its ratio of mismatches to *mapped* length is less than or equal to this value.
+    real: alignment will be output only if its ratio of mismatches to *mapped* length is less than or equal to this value.
 
 outFilterMismatchNoverReadLmax  1.0
-    float: alignment will be output only if its ratio of mismatches to *read* length is less than or equal to this value.
+    real: alignment will be output only if its ratio of mismatches to *read* length is less than or equal to this value.
 
 
 outFilterScoreMin               0
     int: alignment will be output only if its score is higher than or equal to this value.
 
 outFilterScoreMinOverLread      0.66
-    float: same as outFilterScoreMin, but  normalized to read length (sum of mates' lengths for paired-end reads)
+    real: same as outFilterScoreMin, but  normalized to read length (sum of mates' lengths for paired-end reads)
 
 outFilterMatchNmin              0
     int: alignment will be output only if the number of matched bases is higher than or equal to this value.
 
 outFilterMatchNminOverLread     0.66
-    float: sam as outFilterMatchNmin, but normalized to the read length (sum of mates' lengths for paired-end reads).
+    real: sam as outFilterMatchNmin, but normalized to the read length (sum of mates' lengths for paired-end reads).
 
 outFilterIntronMotifs           None
     string: filter alignment using their motifs
@@ -383,7 +452,7 @@ outFilterIntronMotifs           None
 				RemoveNoncanonicalUnannotated  ... filter out alignments that contain non-canonical unannotated junctions when using annotated splice junctions database. The annotated non-canonical junctions will be kept.
 
 outFilterIntronStrands          RemoveInconsistentStrands
-    string: filter alignments 
+    string: filter alignments
                 RemoveInconsistentStrands      ... remove alignments that have junctions with inconsistent strands
                 None                           ... no filtering
 
@@ -445,7 +514,7 @@ scoreInsBase                 -2
     insertion extension penalty per base (in addition to scoreInsOpen)
 
 scoreStitchSJshift           1
-    maximum score reduction while searching for SJ boundaries inthe stitching step
+    maximum score reduction while searching for SJ boundaries in the stitching step
 
 
 ### Alignments and Seeding
@@ -454,10 +523,10 @@ seedSearchStartLmax             50
     int>0: defines the search start point through the read - the read is split into pieces no longer than this value
 
 seedSearchStartLmaxOverLread    1.0
-    float: seedSearchStartLmax normalized to read length (sum of mates' lengths for paired-end reads)
+    real: seedSearchStartLmax normalized to read length (sum of mates' lengths for paired-end reads)
 
 seedSearchLmax       0
-    int>=0: defines the maximum length of the seeds, if =0 max seed lengthis infinite
+    int>=0: defines the maximum length of the seeds, if =0 seed length is not limited
 
 seedMultimapNmax      10000
     int>0: only pieces that map fewer than this value are utilized in the stitching procedure
@@ -473,6 +542,9 @@ seedNoneLociPerWindow    10
 
 seedSplitMin                12
     int>0: min length of the seed sequences split by Ns or mate gap
+
+seedMapMin              5
+    int>0: min length of seeds to be mapped
 
 alignIntronMin              21
     minimum intron size: genomic gap is considered intron if its length>=alignIntronMin, otherwise it is considered Deletion
@@ -497,7 +569,7 @@ alignSplicedMateMapLmin     0
     int>0: minimum mapped length for a read mate that is spliced
 
 alignSplicedMateMapLminOverLmate 0.66
-    float>0: alignSplicedMateMapLmin normalized to mate length
+    real>0: alignSplicedMateMapLmin normalized to mate length
 
 alignWindowsPerReadNmax     10000
     int>0: max number of windows per read
@@ -518,15 +590,26 @@ alignEndsType           Local
 alignEndsProtrude       0    ConcordantPair
     int, string:        allow protrusion of alignment ends, i.e. start (end) of the +strand mate downstream of the start (end) of the -strand mate
                         1st word: int: maximum number of protrusion bases allowed
-                        2nd word: string: 
+                        2nd word: string:
                                             ConcordantPair ... report alignments with non-zero protrusion as concordant pairs
                                             DiscordantPair ... report alignments with non-zero protrusion as discordant pairs
 
-
-alignSoftClipAtReferenceEnds Yes
+alignSoftClipAtReferenceEnds    Yes
     string: allow the soft-clipping of the alignments past the end of the chromosomes
-                        Yes ... allow
-                        No  ... prohibit, useful for compatibility with Cufflinks
+                                Yes ... allow
+                                No  ... prohibit, useful for compatibility with Cufflinks
+
+alignInsertionFlush     None
+    string: how to flush ambiguous insertion positions
+                        None    ... insertions are not flushed
+                        Right   ... insertions are flushed to the right
+
+### Paired-End reads
+peOverlapNbasesMin          0
+    int>=0:             minimum number of overlap bases to trigger mates merging and realignment
+
+peOverlapMMp                0.01
+    real, >=0 & <1:     maximum proportion of mismatched bases in the overlap area
 
 ### Windows, Anchors, Binning
 
@@ -543,19 +626,18 @@ winFlankNbins                   4
     int>0: log2(winFlank), where win Flank is the size of the left and right flanking regions for each window
 
 winReadCoverageRelativeMin      0.5
-    float>=0: minimum relative coverage of the read sequence by the seeds in a window, for STARlong algorithm only.
+    real>=0: minimum relative coverage of the read sequence by the seeds in a window, for STARlong algorithm only.
 
 winReadCoverageBasesMin      0
     int>0: minimum number of bases covered by the seeds in a window , for STARlong algorithm only.
 
 ### Chimeric Alignments
-chimOutType                 SeparateSAMold
+chimOutType                 Junctions
     string(s): type of chimeric output
-                            1st word:
+                            Junctions       ... Chimeric.out.junction
                             SeparateSAMold  ... output old SAM into separate Chimeric.out.sam file
                             WithinBAM       ... output into main aligned BAM files (Aligned.*.bam)
-                            2nd word:
-                            WithinBAM HardClip  ... hard-clipping in the CIGAR for supplemental chimeric alignments (defaultif no 2nd word is present)
+                            WithinBAM HardClip  ... (default) hard-clipping in the CIGAR for supplemental chimeric alignments (default if no 2nd word is present)
                             WithinBAM SoftClip  ... soft-clipping in the CIGAR for supplemental chimeric alignments
 
 chimSegmentMin              0
@@ -565,7 +647,7 @@ chimScoreMin                0
     int>=0: minimum total (summed) score of the chimeric segments
 
 chimScoreDropMax            20
-    int>=0: max drop (difference) of chimeric score (the sum of scores of all chimeric segements) from the read length
+    int>=0: max drop (difference) of chimeric score (the sum of scores of all chimeric segments) from the read length
 
 chimScoreSeparation         10
     int>=0: minimum difference (separation) between the best chimeric score and the next one
@@ -587,6 +669,21 @@ chimFilter                  banGenomicN
 chimMainSegmentMultNmax        10
     int>=1: maximum number of multi-alignments for the main chimeric segment. =1 will prohibit multimapping main segments.
 
+chimMultimapNmax                    0
+    int>=0: maximum number of chimeric multi-alignments
+                                0 ... use the old scheme for chimeric detection which only considered unique alignments
+
+chimMultimapScoreRange          1
+    int>=0: the score range for multi-mapping chimeras below the best chimeric score. Only works with --chimMultimapNmax > 1
+
+chimNonchimScoreDropMin         20
+    int>=0: to trigger chimeric detection, the drop in the best non-chimeric alignment score with respect to the read length has to be greater than this value
+
+chimOutJunctionFormat           0
+    int: formatting type for the Chimeric.out.junction file
+                                0 ... no comment lines/headers
+                                1 ... comment lines at the end of the file: command line and Nreads: total, unique/multi-mapping
+
 ### Quantification of Annotations
 quantMode                   -
     string(s): types of quantification requested
@@ -595,7 +692,11 @@ quantMode                   -
                             GeneCounts       ... count reads per gene
 
 quantTranscriptomeBAMcompression    1       1
-    int: -1 to 10  transcriptome BAM compression level, -1=default compression (6?), 0=no compression, 10=maximum compression
+    int: -2 to 10  transcriptome BAM compression level
+                            -2  ... no BAM output
+                            -1  ... default compression (6?)
+                             0  ... no compression
+                             10 ... maximum compression
 
 quantTranscriptomeBan       IndelSoftclipSingleend
     string: prohibit various alignment type
@@ -611,3 +712,113 @@ twopassMode                 None
 twopass1readsN              -1
     int: number of reads to process for the 1st step. Use very large number (or default -1) to map all reads in the first step.
 
+
+### WASP parameters
+waspOutputMode              None
+    string: WASP allele-specific output type. This is re-implementation of the original WASP mappability filtering by Bryce van de Geijn, Graham McVicker, Yoav Gilad & Jonathan K Pritchard. Please cite the original WASP paper: Nature Methods 12, 1061–1063 (2015), https://www.nature.com/articles/nmeth.3582 .
+                            SAMtag      ... add WASP tags to the alignments that pass WASP filtering
+
+### STARsolo (single cell RNA-seq) parameters
+soloType                    None
+    string(s): type of single-cell RNA-seq
+                            CB_UMI_Simple   ... (a.k.a. Droplet) one UMI and one Cell Barcode of fixed length in read2, e.g. Drop-seq and 10X Chromium.
+                            CB_UMI_Complex  ... one UMI of fixed length, but multiple Cell Barcodes of varying length, as well as adapters sequences are allowed in read2 only, e.g. inDrop.
+                            CB_samTagOut    ... output Cell Barcode as CR and/or CB SAm tag. No UMI counting. --readFilesIn cDNA_read1 [cDNA_read2 if paired-end] CellBarcode_read . Requires --outSAMtype BAM Unsorted [and/or SortedByCoordinate]
+                            SmartSeq        ... Smart-seq: each cell in a separate FASTQ (paired- or single-end), barcodes are corresponding read-groups, no UMI sequences, alignments deduplicated according to alignment start and end (after extending soft-clipped bases)
+
+soloCBwhitelist             -
+    string(s): file(s) with whitelist(s) of cell barcodes. Only --soloType CB_UMI_Complex allows more than one whitelist file.
+                            None            ... no whitelist: all cell barcodes are allowed
+
+soloCBstart                 1
+    int>0: cell barcode start base
+
+soloCBlen                   16
+    int>0: cell barcode length
+
+soloUMIstart                17
+    int>0: UMI start base
+
+soloUMIlen                  10
+    int>0: UMI length
+
+soloBarcodeReadLength       1
+    int: length of the barcode read
+                            1   ... equal to sum of soloCBlen+soloUMIlen
+                            0   ... not defined, do not check
+
+soloCBposition              -
+    strings(s)              position of Cell Barcode(s) on the barcode read.
+                            Presently only works with --soloType CB_UMI_Complex, and barcodes are assumed to be on Read2.
+                            Format for each barcode: startAnchor_startPosition_endAnchor_endPosition
+                            start(end)Anchor defines the Anchor Base for the CB: 0: read start; 1: read end; 2: adapter start; 3: adapter end
+                            start(end)Position is the 0-based position with of the CB start(end) with respect to the Anchor Base
+                            String for different barcodes are separated by space.
+                            Example: inDrop (Zilionis et al, Nat. Protocols, 2017):
+                            --soloCBposition  0_0_2_-1  3_1_3_8
+
+soloUMIposition             -
+    string                  position of the UMI on the barcode read, same as soloCBposition
+                            Example: inDrop (Zilionis et al, Nat. Protocols, 2017):
+                            --soloCBposition  3_9_3_14
+
+soloAdapterSequence         -
+    string:                 adapter sequence to anchor barcodes.
+
+soloAdapterMismatchesNmax   1
+    int>0:                  maximum number of mismatches allowed in adapter sequence.
+
+soloCBmatchWLtype           1MM_multi
+    string:                 matching the Cell Barcodes to the WhiteList
+                            Exact                   ... only exact matches allowed
+                            1MM                     ... only one match in whitelist with 1 mismatched base allowed. Allowed CBs have to have at least one read with exact match.
+                            1MM_multi               ... multiple matches in whitelist with 1 mismatched base allowed, posterior probability calculation is used choose one of the matches.
+                                                        Allowed CBs have to have at least one read with exact match. Similar to CellRanger 2.2.0
+                            1MM_multi_pseudocounts  ... same as 1MM_Multi, but pseudocounts of 1 are added to all whitelist barcodes.
+                                                        Similar to CellRanger 3.x.x
+
+soloStrand                  Forward
+    string: strandedness of the solo libraries:
+                            Unstranded  ... no strand information
+                            Forward     ... read strand same as the original RNA molecule
+                            Reverse     ... read strand opposite to the original RNA molecule
+
+soloFeatures                Gene
+    string(s):              genomic features for which the UMI counts per Cell Barcode are collected
+                            Gene            ... genes: reads match the gene transcript
+                            SJ              ... splice junctions: reported in SJ.out.tab
+                            GeneFull        ... full genes: count all reads overlapping genes' exons and introns
+
+#####UnderDevelopment_begin : not supported - do not use
+                            Transcript3p    ... quantification of transcript for 3' protocols
+#####UnderDevelopment_end
+
+soloUMIdedup                1MM_All
+    string(s):              type of UMI deduplication (collapsing) algorithm
+                            1MM_All             ... all UMIs with 1 mismatch distance to each other are collapsed (i.e. counted once)
+                            1MM_Directional     ... follows the "directional" method from the UMI-tools by Smith, Heger and Sudbery (Genome Research 2017).
+                            Exact               ... only exactly matching UMIs are collapsed
+                            NoDedup             ... no deduplication of UMIs, count all reads. Allowed for --soloType SmartSeq
+
+soloUMIfiltering            -
+    string(s)               type of UMI filtering
+                            -               ... basic filtering: remove UMIs with N and homopolymers (similar to CellRanger 2.2.0)
+                            MultiGeneUMI    ... remove lower-count UMIs that map to more than one gene (introduced in CellRanger 3.x.x)
+
+soloOutFileNames            Solo.out/          features.tsv barcodes.tsv        matrix.mtx
+    string(s)               file names for STARsolo output:
+                            file_name_prefix   gene_names   barcode_sequences   cell_feature_count_matrix
+
+soloCellFilter              CellRanger2.2 3000 0.99 10
+    string(s):              cell filtering type and parameters
+                            CellRanger2.2   ... simple filtering of CellRanger 2.2, followed by three numbers: number of expected cells, robust maximum percentile for UMI count, maximum to minimum ratio for UMI count
+                            TopCells        ... only report top cells by UMI count, followed by the exact number of cells
+                            None            ... do not output filtered cells
+
+soloOutFormatFeaturesGeneField3	"Gene Expression"
+	string(s):				field 3 in the Gene features.tsv file. If "-", then no 3rd field is output.
+
+#####UnderDevelopment_begin : not supported - do not use
+soloClusterCBfile           -
+    string:                 file containing the cluster information for cell barcodes, two columns: CB cluster_index. Only used with --soloFeatures Transcript3p
+#####UnderDevelopment_end
